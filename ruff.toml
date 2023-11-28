@@ -11,7 +11,7 @@ exclude = ["dependencies/**"]
 [lint]
 # Enable all rules.
 select = ["ALL"]
-ignore = []
+ignore = ["D203", "D212"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
