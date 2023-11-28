@@ -32,3 +32,7 @@ skip-magic-trailing-comma = false
 
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
+
+[lint.mccabe]
+# Flag error (`C901`) whenever the complexity level exceeds 4.
+max-complexity = 4
