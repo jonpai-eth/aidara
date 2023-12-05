@@ -8,6 +8,9 @@ target-version = "py310"
 # Don't check dependencies.
 exclude = ["dependencies/**"]
 
+# treat all python packages as namespace packages
+namespace-packages = ["code/speech2text"]
+
 [lint]
 # Enable all rules.
 select = ["ALL"]
@@ -19,6 +22,10 @@ unfixable = []
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.mccabe]
+# Flag error (`C901`) whenever the complexity level exceeds 4.
+max-complexity = 4
 
 [format]
 # Like Black, use double quotes for strings.
@@ -32,7 +39,3 @@ skip-magic-trailing-comma = false
 
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
-
-[lint.mccabe]
-# Flag error (`C901`) whenever the complexity level exceeds 4.
-max-complexity = 4
