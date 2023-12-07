@@ -1,0 +1,14 @@
+name: C++ check
+on: push
+jobs:
+  cpp_check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run C++ check
+      uses: JacobDomagala/StaticAnalysis@master
+      with:
+        exclude_dir: dependencies
+        use_cmake: false
+        clang_tidy_args: -checks=*
+        cppcheck_args: --enable=all
