@@ -11,4 +11,4 @@ jobs:
         exclude_dir: dependencies
         use_cmake: false
         clang_tidy_args: -checks=*
-        cppcheck_args: --enable=all
+        cppcheck_args: --enable=all --file-filter=**/*.cpp
