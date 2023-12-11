@@ -1,0 +1,22 @@
+matrix:
+- name: Python Source
+  dictionary:
+    wordlists:
+    - .wordlist.txt
+    output: pyspelling.dict
+  sources:
+  - code/**/*.py
+- name: C++ Source
+  dictionary:
+    wordlists:
+    - .wordlist.txt
+    output: pyspelling.dict
+  sources:
+  - code/**/*.cpp|code/**/*.cpp
+- name: Markdown
+  dictionary:
+    wordlists:
+    - .wordlist.txt
+    output: pyspelling.dict
+  sources:
+  - code/**/*.md
