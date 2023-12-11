@@ -1,0 +1,2 @@
+sounddevice==0.4.6
+SpeechRecognition==3.10

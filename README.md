@@ -1,2 +1,3 @@
 # aidara
-The product of the aidara focus project.
+
+The product of the aidara project.

@@ -1,1 +1,4 @@
 aidara
+noqa
+OpenAI
+ROS
