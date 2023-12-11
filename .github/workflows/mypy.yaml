@@ -4,12 +4,16 @@ jobs:
   mypy:
     name: mypy
     runs-on: ubuntu-latest
+    container: osrf/ros:iron-desktop-jammy
     strategy:
       matrix:
         package: ["code/speech2text"]
     steps:
       - uses: actions/checkout@v2
-      - run: pip install -r ${{ matrix.package }}/requirements.txt
+      - run: apt update && apt install wget
+      - run: wget https://bootstrap.pypa.io/get-pip.py
+      - run: python3 get-pip.py
+      - run: pip3 install -r ${{ matrix.package }}/requirements.txt
       - uses: tsuyoshicho/action-mypy@v3
         with:
           github_token: ${{ secrets.github_token }}
