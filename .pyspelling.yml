@@ -16,7 +16,7 @@ matrix:
     - .wordlist.txt
     output: pyspelling.dict
   sources:
-  - code/**/*.cpp|code/**/*.cpp
+  - code/**/*.cpp|code/**/*.hpp
 - name: Markdown
   pipeline:
     - pyspelling.filters.markdown
