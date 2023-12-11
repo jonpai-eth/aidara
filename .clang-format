@@ -1,0 +1,3 @@
+BasedOnStyle: Google
+ColumnLimit: 110
+Standard: Cpp11
