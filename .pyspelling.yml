@@ -1,5 +1,7 @@
 matrix:
 - name: Python Source
+  pipeline:
+    - pyspelling.filters.python
   dictionary:
     wordlists:
     - .wordlist.txt
@@ -7,6 +9,8 @@ matrix:
   sources:
   - code/**/*.py
 - name: C++ Source
+  pipeline:
+    - pyspelling.filters.cpp
   dictionary:
     wordlists:
     - .wordlist.txt
@@ -14,6 +18,8 @@ matrix:
   sources:
   - code/**/*.cpp|code/**/*.cpp
 - name: Markdown
+  pipeline:
+    - pyspelling.filters.markdown
   dictionary:
     wordlists:
     - .wordlist.txt

@@ -1,10 +1,21 @@
 name: Spellcheck Action
 on: push
 jobs:
-  build:
-    name: Spellcheck
+  spelling:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: rojopolis/spellcheck-github-actions@0.35.0
-      name: Spellcheck
+    - uses: actions/checkout@v1
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.10.13
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip setuptools
+        pip install pyspelling
+    - name: Install Aspell
+      run: |
+        sudo apt-get install aspell aspell-en
+    - name: Spell check
+      run: |
+        python3 -m pyspelling
