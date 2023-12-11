@@ -10,6 +10,8 @@ jobs:
         package: ["code/speech2text"]
     steps:
       - uses: actions/checkout@v2
+      - run: source /opt/ros/iron/setup.bash
+        shell: bash
       - run: apt update && apt install wget
       - run: wget https://bootstrap.pypa.io/get-pip.py
       - run: python3 get-pip.py
