@@ -1,0 +1,18 @@
+name: mypy
+on: push
+jobs:
+  mypy:
+    name: mypy
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: ["code/speech2text"]
+    steps:
+      - uses: actions/checkout@v2
+      - run: pip install -r ${{ matrix.package }}/requirements.txt
+      - uses: tsuyoshicho/action-mypy@v3
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          level: warning
+          workdir: ${{ matrix.package }}
