@@ -9,12 +9,12 @@ target-version = "py310"
 exclude = ["dependencies/**"]
 
 # treat all python packages as namespace packages
-namespace-packages = ["code/speech2text"]
+namespace-packages = ["code/aidara_common", "code/camera_calibration", "code/speech2text"]
 
 [lint]
 # Enable all rules.
 select = ["ALL"]
-ignore = ["D203", "D212", "ANN101", "ANN102"]
+ignore = ["ANN101", "ANN102", "D203", "D212", "D417"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -26,6 +26,9 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 [lint.mccabe]
 # Flag error (`C901`) whenever the complexity level exceeds 4.
 max-complexity = 4
+
+[lint.pydocstyle]
+convention = "google"
 
 [format]
 # Like Black, use double quotes for strings.

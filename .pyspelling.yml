@@ -8,15 +8,6 @@ matrix:
     output: pyspelling.dict
   sources:
   - code/**/*.py
-- name: C++ Source
-  pipeline:
-    - pyspelling.filters.cpp
-  dictionary:
-    wordlists:
-    - .wordlist.txt
-    output: pyspelling.dict
-  sources:
-  - code/**/*.cpp|code/**/*.hpp
 - name: Markdown
   pipeline:
     - pyspelling.filters.markdown
@@ -26,3 +17,12 @@ matrix:
     output: pyspelling.dict
   sources:
   - code/**/*.md
+- name: C++ Source
+  pipeline:
+    - pyspelling.filters.cpp
+  dictionary:
+    wordlists:
+    - .wordlist.txt
+    output: pyspelling.dict
+  sources:
+  - code/**/*.cpp|code/**/*.hpp

@@ -7,7 +7,7 @@ jobs:
     container: osrf/ros:iron-desktop-jammy
     strategy:
       matrix:
-        package: ["code/speech2text"]
+        package: ["code/aidara_common", "code/camera_calibration", "code/speech2text"]
     steps:
       - uses: actions/checkout@v2
       - run: source /opt/ros/iron/setup.bash
