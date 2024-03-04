@@ -16,6 +16,7 @@ grayscale
 http
 https
 intrinsics
+msg
 msgs
 mtx
 ndarray
