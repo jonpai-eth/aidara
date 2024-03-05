@@ -9,10 +9,8 @@ import string
 import rclpy
 import sounddevice  # noqa: F401
 import speech_recognition as sr
-from rcl_interfaces.msg import SetParametersResult
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
-from rclpy.parameter import Parameter
 from std_msgs.msg import String
 
 
@@ -23,16 +21,18 @@ class Speech2Text(Node):
         """Initialize Speech2Text."""
         super().__init__("speech2text")
 
-        self._keyword = "alfred"
+        self._keyword = "can you"
         self._recognizer = sr.Recognizer()
 
-        self._punctuation_replacement = str.maketrans("", "", string.punctuation)
+        self._min_energy_threshold = 800
+        self._max_energy_threshold = 3000
+        self._recognizer.energy_threshold = 800
+        self._recognizer.dynamic_energy_threshold = False
 
-        self.declare_parameter("energy_threshold", 2000)
-        self._recognizer.energy_threshold = (
-            self.get_parameter("energy_threshold").get_parameter_value().integer_value
-        )
-        self.add_on_set_parameters_callback(self._parameter_callback)
+        self._counter = 0
+        self._max_counter = 5
+
+        self._punctuation_replacement = str.maketrans("", "", string.punctuation)
 
         self._pub = self.create_publisher(
             String,
@@ -40,31 +40,21 @@ class Speech2Text(Node):
             1,
         )
 
-    def _parameter_callback(
-        self,
-        parameters: list[Parameter],
-    ) -> SetParametersResult:
-        """Forward energy_threshold parameter change to the recognizer."""
-        new_energy_threshold = next(
-            filter(lambda param: param.name == "energy_threshold", parameters),
-            None,
-        )
-        if new_energy_threshold:
-            if not new_energy_threshold.type_ == rclpy.Parameter.Type.INTEGER:
-                raise ValueError(new_energy_threshold)
-            self._recognizer.energy_threshold = new_energy_threshold.value
-            self.get_logger().info(
-                f"Updated energy_threshold to {self._recognizer.energy_threshold}.",
-            )
-        return SetParametersResult(successful=True)
-
     def _transcribe_microphone(self) -> str | None:
         """Transcribe microphone input using OpenAI Whisper."""
         with sr.Microphone() as microphone:
             audio_listened = self._recognizer.listen(microphone)
+            self._counter += 1
 
-        if not audio_listened.frame_data:
-            return None
+
+            if not audio_listened.frame_data:
+                return None
+
+            if self._counter >= self._max_counter:
+                self.get_logger().info("Adjusting to ambient noise...")
+                self._recognizer.adjust_for_ambient_noise(microphone)
+                self._counter = 0
+                self._check_ambient_noise_adjustment()
 
         try:
             text = self._recognizer.recognize_whisper(
@@ -72,6 +62,7 @@ class Speech2Text(Node):
                 model="large-v3",
                 language="english",
             )
+            self.get_logger().info(text)
         except sr.UnknownValueError:
             self.get_logger().info("speech2text was unable to understand a phrase.")
             return None
@@ -80,6 +71,23 @@ class Speech2Text(Node):
         self.get_logger().debug(f"recognized text: '{stripped_text}'.")
 
         return stripped_text
+
+    def _check_ambient_noise_adjustment(self) -> None:
+        """Check if energy_threshold needs to be adjusted within a range (800-3000)."""
+        if self._recognizer.energy_threshold < self._min_energy_threshold:
+            self._recognizer.energy_threshold = self._min_energy_threshold
+            self.get_logger().info(
+                f"Adjustment lower than min: {self._recognizer.energy_threshold}")
+
+        elif self._recognizer.energy_threshold > self._max_energy_threshold:
+            self._recognizer.energy_threshold = self._max_energy_threshold
+            self.get_logger().info(
+                f"Adjustment higher than max: {self._recognizer.energy_threshold}")
+
+        else:
+            self.get_logger().info(
+                f"New energy_threshold: {self._recognizer.energy_threshold}")
+
 
     def _extract_instruction(self, stripped_text: str) -> str | None:
         """Extract instruction from text."""
@@ -99,6 +107,7 @@ class Speech2Text(Node):
 
     def listen(self) -> None:
         """Extract an instruction from the microphone and publish it on /speech2text."""
+        self.get_logger().info("Listening...")
         stripped_text = self._transcribe_microphone()
         if not stripped_text:
             return
@@ -110,7 +119,6 @@ class Speech2Text(Node):
         msg = String()
         msg.data = extracted_instruction
         self._pub.publish(msg)
-
 
 def main(args: list[str] | None = None) -> None:
     """Initialize and run the Speech2Text node."""
