@@ -77,12 +77,12 @@ class Speech2Text(Node):
         if self._recognizer.energy_threshold < self._min_energy_threshold:
             self._recognizer.energy_threshold = self._min_energy_threshold
             self.get_logger().info(
-                f"Adjustment lower than min: {self._recognizer.energy_threshold}")
+                f"Adjustment lower than Min.: {self._recognizer.energy_threshold}")
 
         elif self._recognizer.energy_threshold > self._max_energy_threshold:
             self._recognizer.energy_threshold = self._max_energy_threshold
             self.get_logger().info(
-                f"Adjustment higher than max: {self._recognizer.energy_threshold}")
+                f"Adjustment higher than Max.: {self._recognizer.energy_threshold}")
 
         else:
             self.get_logger().info(
