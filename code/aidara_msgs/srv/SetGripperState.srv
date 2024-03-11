@@ -1,0 +1,4 @@
+# Service interface for the gripper, true stands for closed gripper.
+bool should_close
+---
+bool success

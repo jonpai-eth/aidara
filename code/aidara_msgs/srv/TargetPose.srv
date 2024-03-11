@@ -1,3 +1,4 @@
+# Service definition for moving the end effector.
 geometry_msgs/PoseStamped target
 ---
 bool success
