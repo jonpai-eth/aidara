@@ -26,3 +26,4 @@ matrix:
     output: pyspelling.dict
   sources:
   - code/**/*.cpp|code/**/*.hpp
+  expect_match: false
