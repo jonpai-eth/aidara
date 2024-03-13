@@ -1,0 +1,139 @@
+path_images: llm_planning/examples/pictures/
+examples:
+  # no object found
+  - images:
+      left: example_1_left.jpeg
+      right: example_1_right.jpeg
+      top: example_1_top.jpeg
+    is_img_required: True
+    prompt: >
+      give me the apple
+    response: |
+      say("Could not find an apple in the scene.")
+  # give 1
+  - images:
+      left: example_7_left.jpeg
+      right: example_7_right.jpeg
+      top: example_7_top.jpeg
+    is_img_required: False
+    prompt: >
+      give me the blue pen
+    response: |
+      pick_object_from_table("blue pen")
+      give_to_hand()
+  # give 2
+  - images:
+      left: example_10_left.jpeg
+      right: example_10_right.jpeg
+      top: example_10_top.jpeg
+    is_img_required: False
+    prompt: >
+      give me the yellow plate
+    response: |
+      pick_object_from_table("yellow plate")
+      give_to_hand()
+  # give 3
+  - images:
+      left: example_9_left.jpeg
+      right: example_9_right.jpeg
+      top: example_9_top.jpeg
+    is_img_required: False
+    prompt: >
+      bring me the matchbox
+    response: |
+      pick_object_from_table("matchbox")
+      give_to_hand()
+  # hold 1
+  - images:
+      left: example_12_left.jpeg
+      right: example_12_right.jpeg
+      top: example_12_top.jpeg
+    is_img_required: False
+    prompt: >
+      hold this
+    response: |
+      take_from_hand()
+  # hold 2
+  - images:
+      left: example_4_left.jpeg
+      right: example_4_right.jpeg
+      top: example_4_top.jpeg
+    is_img_required: False
+    prompt: >
+      take this
+    response: |
+      take_from_hand()
+  # put away 1
+  - images:
+      left: example_12_left.jpeg
+      right: example_12_right.jpeg
+      top: example_12_top.jpeg
+    is_img_required: False
+    prompt: >
+      put this away
+    response: |
+      take_from_hand()
+      place_on_table(0.9,0.8)
+  # put away 2
+  - images:
+      left: example_4_left.jpeg
+      right: example_4_right.jpeg
+      top: example_4_top.jpeg
+    is_img_required: False
+    prompt: >
+      put this away
+    response: |
+      take_from_hand()
+      place_on_table(0.8,0.3)
+  # ambigious (cannot be resolved)
+  - images:
+      left: example_11_left.jpeg
+      right: example_11_right.jpeg
+      top: example_11_top.jpeg
+    is_img_required: True
+    prompt: >
+      give me this
+    response: |
+      say("Could not find suitable action.")
+  # put back occupied
+  - images:
+      left: example_1_left.jpeg
+      right: example_1_right.jpeg
+      top: example_1_top.jpeg
+    is_img_required: True
+    prompt: >
+      place the green pen in the top right corner of the table
+    response: |
+      say("This spot is already occupied.")
+  # put next to
+  - images:
+      left: example_8_left.jpeg
+      right: example_8_right.jpeg
+      top: example_8_top.jpeg
+    is_img_required: True
+    prompt: >
+      place the blue yellow cup left of the yellow plate
+    response: |
+      pick_object_from_table("yellow plate")
+      place_on_table(0.7, 0.2)
+  # put into/ onto
+  - images:
+      left: example_9_left.jpeg
+      right: example_9_right.jpeg
+      top: example_9_top.jpeg
+    is_img_required: True
+    prompt: >
+      put the matchbox onto the blue plate
+    response: |
+      pick_object_from_table("matchbox")
+      place_on_table(0.1, 0.7)
+  # out of range
+  - images:
+      left: example_3_left.jpeg
+      right: example_3_right.jpeg
+      top: example_3_top.jpeg
+    is_img_required: True
+    prompt: >
+      give me the umbrella
+    response: |
+      say("The umbrella does not lie within the range of the robot.")

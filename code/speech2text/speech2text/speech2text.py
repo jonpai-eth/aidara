@@ -36,7 +36,7 @@ class Speech2Text(Node):
 
         self._pub = self.create_publisher(
             String,
-            "speech2text",
+            "/speech2text",
             1,
         )
 

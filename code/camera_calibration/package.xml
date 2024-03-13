@@ -3,28 +3,23 @@
 <package format="3">
   <name>camera_calibration</name>
   <version>0.0.0</version>
-  <description>Publishes transformation from camera to checkerboard frame</description>
+  <description>Publishes transformation from camera to checkerboard frame.</description>
   <maintainer email="avonruffer@ethz.ch">Artur von Ruffer</maintainer>
-  <license>TODO: License declaration</license>
+  <license>MIT</license>
 
-  <test_depend>ament_copyright</test_depend>
-  <test_depend>ament_flake8</test_depend>
-  <test_depend>ament_pep257</test_depend>
-  <test_depend>python3-pytest</test_depend>
-
-   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclpy</depend>
   <depend>tf2_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>rosidl_default_generators</depend>
   <depend>rosidl_default_runtime</depend>
+  
   <build_depend>builtin_interfaces</build_depend>
 
   <exec_depend>python3-scipy</exec_depend>
   <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
-
 
   <export>
     <build_type>ament_python</build_type>

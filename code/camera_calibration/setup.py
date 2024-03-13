@@ -1,4 +1,4 @@
-"""Setup.py file of the camera_calibration ROS package."""
+"""Setup for the camera_calibration package."""
 
 from setuptools import find_packages, setup
 
@@ -19,10 +19,9 @@ setup(
     maintainer_email="avonruffer@ethz.ch",
     description="Publishes transformation from camera to checkerboard frame",
     license="MIT",
-    tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "calibration_node = camera_calibration.calibration_node:main",
+            "chessboard_calibration = camera_calibration.chessboard_calibration:main",
         ],
     },
 )

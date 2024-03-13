@@ -9,7 +9,13 @@ target-version = "py310"
 exclude = ["dependencies/**"]
 
 # treat all python packages as namespace packages
-namespace-packages = ["code/aidara_common", "code/camera_calibration", "code/speech2text"]
+namespace-packages = [
+    "code/aidara_common",
+    "code/camera_calibration",
+    "code/llm_planning",
+    "code/speech2text",
+    "code/top_level_actions"
+]
 
 [lint]
 # Enable all rules.
@@ -22,6 +28,15 @@ unfixable = []
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.isort]
+known-local-folder = [
+    "aidara_common",
+    "camera_calibration",
+    "llm_planning",
+    "speech2text",
+    "top_level_actions"
+]
 
 [lint.mccabe]
 # Flag error (`C901`) whenever the complexity level exceeds 4.

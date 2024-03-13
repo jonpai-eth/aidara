@@ -1,1 +1,1 @@
-"""Speech recognition package."""
+"""Speech recognition."""

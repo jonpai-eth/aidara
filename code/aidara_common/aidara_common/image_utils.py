@@ -1,17 +1,36 @@
 """Utility functions for working with ZED cameras and its images."""
-from typing import TypeVar
 
+import base64
+import pathlib
+from collections.abc import Iterable, Iterator
+
+import cv2
 import numpy as np
+import numpy.typing as npt
+import PIL.Image
+from cv_bridge import CvBridge
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo, Image
 
+from aidara_common.singleton import Singleton
+from aidara_common.topic_utils import get_latest_msg_from_topic
 
-def get_img_from_zed(node: Node, callback_group: ReentrantCallbackGroup) -> Image:
+
+class CvBridgeSingleton(CvBridge, metaclass=Singleton):
+    """Singleton Cv Bridge."""
+
+
+def get_img_from_zed(
+    node: Node,
+    callback_group: ReentrantCallbackGroup,
+    camera_name: str = "zed",
+) -> Image:
     """
     Get image of current scene from ZED camera.
 
-    From topic /zed/zed_node/left/image_rect_color.
+    This assumes there is a camera with the name "zed" in the network; it listens to the
+    topic /zed/zed_node/left/image_rect_color.
 
     Args:
         node: ROS2 node.
@@ -20,15 +39,29 @@ def get_img_from_zed(node: Node, callback_group: ReentrantCallbackGroup) -> Imag
     Returns:
         Latest image from ZED camera.
     """
-    node.get_logger().info("Waiting for image...")
-    img = get_latest_msg_from_topic(
+    return get_latest_msg_from_topic(
         node,
-        "/zed/zed_node/left/image_rect_color",
+        f"/{camera_name}/zed_node/rgb/image_rect_color",
         Image,
         callback_group,
     )
-    node.get_logger().info("Received image.")
-    return img
+
+
+def get_all_images(
+    node: Node,
+    callback_group: ReentrantCallbackGroup,
+    camera_names: Iterable[str] = ["zed_left", "zed_top", "zed_right"],
+) -> Iterator[Image]:
+    """Return a tuple of all available images."""
+    yield from (
+        get_latest_msg_from_topic(
+            node,
+            f"/{camera_name}/zed_node/rgb/image_rect_color",
+            Image,
+            callback_group,
+        )
+        for camera_name in camera_names
+    )
 
 
 def get_zed_intrinsics(
@@ -50,14 +83,12 @@ def get_zed_intrinsics(
             1x5 ndarray dist_coeffs: [k1, k2, p1, p2, k3]
     """
     # Get CameraInfo message from topic
-    node.get_logger().info("Waiting for intrinsics...")
     cam_info = get_latest_msg_from_topic(
         node,
         "/zed/zed_node/left/camera_info",
         CameraInfo,
         callback_group,
     )
-    node.get_logger().info("Received intrinsics.")
 
     # Extract intrinsic parameters from CameraInfo message
     fx, _, cx, _, fy, cy, *_ = iter(cam_info.k)
@@ -72,45 +103,31 @@ def get_zed_intrinsics(
     return mtx, dist_coeffs
 
 
-AnyMessage = TypeVar("AnyMessage")
+def imgmsg_to_base64(image: Image) -> str:
+    """Convert Image msg to b64 encoding."""
+    cv2_img = CvBridgeSingleton().imgmsg_to_cv2(image, desired_encoding="bgr8")
+    _, jpg_img = cv2.imencode(".jpg", cv2_img)
+    return base64.b64encode(jpg_img).decode("utf-8")
 
 
-def get_latest_msg_from_topic(
-    node: Node,
-    topic: str,
-    msg_type: type[AnyMessage],
-    callback_group: ReentrantCallbackGroup,
-) -> AnyMessage:
-    """
-    Return latest message from specified topic.
+def imgmsg_to_grayscale(image: Image) -> npt.NDArray:
+    """Convert Image msg to grayscale."""
+    return CvBridgeSingleton().imgmsg_to_cv2(image, "mono8")
 
-    Args:
-        node: ROS2 node.
-        topic: Topic that the desired message is published to.
-        msg_type: Type of the desired message.
-        callback_group: Reentrant callback group.
 
-    Returns:
-        Raw message.
-    """
-    msg = None
+def imgmsg_to_pil(image: Image) -> PIL.Image.Image:
+    """Convert Image msg to PIL."""
+    cv2_img = CvBridgeSingleton().imgmsg_to_cv2(image, desired_encoding="bgr8")
+    cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
+    return PIL.Image.fromarray(cv2_img)
 
-    def update_msg(incoming_msg: Image) -> None:
-        nonlocal msg
-        msg = incoming_msg
-        node.destroy_subscription(subs)
 
-    subs = node.create_subscription(
-        msg_type,
-        topic,
-        update_msg,
-        qos_profile=1,
-        callback_group=callback_group,
-    )
+def imgmsg_to_rgb(image: Image) -> npt.NDArray:
+    """Convert Image msg to grayscale."""
+    return CvBridgeSingleton().imgmsg_to_cv2(image, "rgb8")
 
-    # Sleep until image can be retrieved to ensure image is there
-    rate = node.create_rate(10, node.get_clock())
-    while msg is None:
-        rate.sleep()
 
-    return msg
+def jpg_to_base64(image: pathlib.Path) -> str:
+    """Read a .jpg file and return the b64 encoding."""
+    with image.open("rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")

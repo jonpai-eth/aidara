@@ -1,12 +1,11 @@
 """ROS service that opens ZED camera, grabs frame and returns transformation."""
+
 import traceback
 
 import cv2
 import numpy as np
 import rclpy
 import ros2_numpy as rnp
-from aidara_common.image_utils import get_img_from_zed, get_zed_intrinsics
-from cv_bridge import CvBridge
 from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
 from numpy.typing import NDArray
 from rclpy.callback_groups import ReentrantCallbackGroup
@@ -15,6 +14,12 @@ from rclpy.node import Node
 from scipy.spatial.transform import Rotation
 from std_srvs.srv import Trigger
 from tf2_ros import StaticTransformBroadcaster
+
+from aidara_common.image_utils import (
+    get_img_from_zed,
+    get_zed_intrinsics,
+    imgmsg_to_grayscale,
+)
 
 # Define the chessboard parameters
 CHESSBOARD_SIZE = (8, 13)  # Number of inner corners on the chessboard
@@ -72,15 +77,15 @@ def get_static_transform(
     return tvecs, rot_mat
 
 
-class CameraChessboardNode(Node):
+class ChessboardCalibration(Node):
     """Node that calculates the homogeneous transform from cam to chessboard frame."""
 
     def __init__(self) -> None:
-        """Create CameraChessboardNode."""
-        super().__init__("camera_chessboard_node")
+        """Create ChessboardCalibration node."""
+        super().__init__("chessboard_calibration")
         self.srv = self.create_service(
             Trigger,
-            "calibrate_camera",
+            "~/calibrate_camera",
             self.calibrate_camera_cb,
         )
         self.br = StaticTransformBroadcaster(self)
@@ -93,15 +98,10 @@ class CameraChessboardNode(Node):
         response: Trigger.Response,
     ) -> Trigger.Response:
         """Capture frame, calculate transform."""
-        # Get frame from ZED camera
         img_msg = get_img_from_zed(self, self.cb_group)
 
-        # Convert to OpenCV format and then grayscale
-        bridge = CvBridge()
-        cv_image = bridge.imgmsg_to_cv2(img_msg, desired_encoding="passthrough")
-        cv_image_gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+        cv_image_gray = imgmsg_to_grayscale(img_msg)
 
-        # Get intrinsics from ROS topic instead
         mtx, dist_coeffs = get_zed_intrinsics(self, self.cb_group)
 
         try:
@@ -142,7 +142,8 @@ class CameraChessboardNode(Node):
             inverse_translation,
         )
         transform_stamped.transform.rotation = rnp.msgify(
-            Quaternion, Rotation.from_matrix(inverse_rotation).as_quat(),
+            Quaternion,
+            Rotation.from_matrix(inverse_rotation).as_quat(),
         )
 
         # Broadcast static transform
@@ -154,11 +155,11 @@ class CameraChessboardNode(Node):
 
 
 def main(args: list[str] | None = None) -> None:
-    """Spin the CameraChessboardNode."""
+    """Spin the ChessboardCalibration node."""
     rclpy.init(args=args)
 
     try:
-        node = CameraChessboardNode()
+        node = ChessboardCalibration()
 
         executor = MultiThreadedExecutor()
         executor.add_node(node)
