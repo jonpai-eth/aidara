@@ -20,14 +20,14 @@ def get_img_from_zed(node: Node, callback_group: ReentrantCallbackGroup) -> Imag
     Returns:
         Latest image from ZED camera.
     """
-    node.logger.info("Waiting for image...")
+    node.get_logger().info("Waiting for image...")
     img = get_latest_msg_from_topic(
         node,
         "/zed/zed_node/left/image_rect_color",
         Image,
         callback_group,
     )
-    node.logger.info("Received image.")
+    node.get_logger().info("Received image.")
     return img
 
 
@@ -50,14 +50,14 @@ def get_zed_intrinsics(
             1x5 ndarray dist_coeffs: [k1, k2, p1, p2, k3]
     """
     # Get CameraInfo message from topic
-    node.logger.info("Waiting for intrinsics...")
+    node.get_logger().info("Waiting for intrinsics...")
     cam_info = get_latest_msg_from_topic(
         node,
         "/zed/zed_node/left/camera_info",
         CameraInfo,
         callback_group,
     )
-    node.logger.info("Received intrinsics.")
+    node.get_logger().info("Received intrinsics.")
 
     # Extract intrinsic parameters from CameraInfo message
     fx, _, cx, _, fy, cy, *_ = iter(cam_info.k)
