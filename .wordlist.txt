@@ -6,6 +6,7 @@ args
 CameraInfo
 ChessboardCalibration
 coeffs
+colcon
 cornersubpix
 cv
 cx
@@ -20,6 +21,7 @@ http
 https
 intrinsics
 jpg
+keypoints
 llm
 LLM
 LLMInterface
@@ -37,6 +39,7 @@ OpenCV
 param
 PIL
 PnP
+pre
 py
 quaternion
 rect
@@ -44,6 +47,7 @@ Reentrant
 ReentrantCallbackGroup
 ros
 ROS
+rviz
 srv
 srvs
 tf
@@ -53,3 +57,4 @@ TransformStamped
 uint
 www
 yaml
+

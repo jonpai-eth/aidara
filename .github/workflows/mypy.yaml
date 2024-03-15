@@ -11,6 +11,7 @@ jobs:
           [
             "code/aidara_common",
             "code/camera_calibration",
+            "code/hand_position",
             "code/llm_planning",
             "code/speech2text",
             "code/top_level_actions",
