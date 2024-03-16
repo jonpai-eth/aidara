@@ -14,6 +14,7 @@ jobs:
             "code/hand_position",
             "code/llm_planning",
             "code/speech2text",
+            "code/tf2_service",
             "code/top_level_actions",
           ]
     steps:

@@ -14,6 +14,8 @@ find_package(geometry_msgs)
 rosidl_generate_interfaces(${PROJECT_NAME} 
   "srv/SetGripperState.srv"
   "srv/TargetPose.srv"
+  "srv/Tf2DoTransform.srv"
+  "srv/Tf2GetTransform.srv"
   DEPENDENCIES geometry_msgs
 )
 
