@@ -29,8 +29,6 @@ class HandTracking(Node):
         )
         self._position_pub = self.create_publisher(PointStamped, "hand_position", 10)
 
-        self.zed_camera_name = zed_camera_name
-
     def _objects_callback(self, objects: ObjectsStamped) -> None:
         """Publish the position of the first visible human right hand."""
         obj: Object
