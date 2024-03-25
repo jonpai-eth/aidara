@@ -102,7 +102,3 @@ def main(args: list[str] | None = None) -> None:
 
     hand_tracking = HandTracking(camera_name)
     rclpy.spin(hand_tracking)
-
-
-if __name__ == "__main__":
-    main()
