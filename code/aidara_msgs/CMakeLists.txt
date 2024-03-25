@@ -10,14 +10,17 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 find_package(geometry_msgs) 
+find_package(std_msgs) 
 
-rosidl_generate_interfaces(${PROJECT_NAME} 
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "srv/CalibrateCamera.srv"
+  "srv/GeometricGrasp.srv"
   "srv/SetGripperState.srv"
   "srv/TargetPose.srv"
   "srv/Tf2GetTransform.srv"
   "srv/Tf2TransformPoint.srv"
   "srv/Tf2TransformPose.srv"
-  DEPENDENCIES geometry_msgs
+  DEPENDENCIES geometry_msgs std_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)

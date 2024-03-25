@@ -3,6 +3,8 @@
 from typing import TypeVar
 
 from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.constants import S_TO_NS
+from rclpy.duration import Duration
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 
@@ -14,6 +16,7 @@ def get_latest_msg_from_topic(
     topic: str,
     msg_type: type[AnyMessage],
     callback_group: ReentrantCallbackGroup,
+    timeout: Duration | None = None,
 ) -> AnyMessage:
     """
     Return latest message from specified topic.
@@ -27,6 +30,7 @@ def get_latest_msg_from_topic(
     Returns:
         Raw message.
     """
+    timeout = timeout or Duration(seconds=5)
     msg = None
 
     def update_msg(incoming_msg: Image) -> None:
@@ -46,8 +50,16 @@ def get_latest_msg_from_topic(
 
     # Sleep until msg can be retrieved.
     rate = node.create_rate(10, node.get_clock())
-    while msg is None:
+    for _ in range(10 * int(timeout.nanoseconds) // S_TO_NS):
         rate.sleep()
+        if msg is not None:
+            break
+    else:
+        msg = (
+            f"Failed to receive any message on '{topic}' after"
+            f" {timeout.nanoseconds / S_TO_NS} seconds."
+        )
+        raise RuntimeError(msg)
 
     node.get_logger().info(f"Received message on '{topic}'.")
 

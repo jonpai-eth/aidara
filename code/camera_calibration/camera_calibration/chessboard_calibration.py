@@ -7,9 +7,8 @@ import numpy as np
 import rclpy
 import ros2_numpy as rnp
 from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
-from numpy.typing import NDArray
 from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
 from rclpy.node import Node
 from scipy.spatial.transform import Rotation
 from std_srvs.srv import Trigger
@@ -20,25 +19,30 @@ from aidara_common.image_utils import (
     get_zed_intrinsics,
     imgmsg_to_grayscale,
 )
-
-# Define the chessboard parameters
-CHESSBOARD_SIZE = (8, 13)  # Number of inner corners on the chessboard
-SQUARE_SIZE = 0.02  # Size of each square in meters
+from aidara_msgs.srv import CalibrateCamera
 
 
 class ChessBoardCornersNotFoundError(Exception):
     """Raise when chessboard corners are not found."""
 
 
-def get_chessboard_corners(image_gray: NDArray) -> tuple[NDArray, NDArray]:
+def _get_chessboard_corners(
+    image_gray: np.ndarray,
+    chessboard_width: int,
+    chessboard_height: int,
+    square_size: float,
+) -> tuple[np.ndarray, np.ndarray]:
     """Generate chessboard world coordinates."""
-    objp = np.zeros((CHESSBOARD_SIZE[0] * CHESSBOARD_SIZE[1], 3), np.float32)
+    objp = np.zeros((chessboard_width * chessboard_height, 3), np.float32)
     objp[:, :2] = (
-        np.mgrid[0 : CHESSBOARD_SIZE[0], 0 : CHESSBOARD_SIZE[1]].T.reshape(-1, 2)
-        * SQUARE_SIZE
+        np.mgrid[0:chessboard_width, 0:chessboard_height].T.reshape(-1, 2) * square_size
     )
 
-    ret, corners = cv2.findChessboardCorners(image_gray, CHESSBOARD_SIZE, None)
+    ret, corners = cv2.findChessboardCorners(
+        image_gray,
+        (chessboard_width, chessboard_height),
+        None,
+    )
 
     if not ret:
         raise ChessBoardCornersNotFoundError
@@ -54,18 +58,16 @@ def get_chessboard_corners(image_gray: NDArray) -> tuple[NDArray, NDArray]:
     return corners_refined, objp
 
 
-def get_static_transform(
-    image_gray: NDArray,
-    camera_matrix: NDArray,
-    dist_coeffs: NDArray,
-) -> NDArray:
+def _get_static_transform(
+    corners: np.ndarray,
+    object_points: np.ndarray,
+    camera_matrix: np.ndarray,
+    dist_coeffs: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
     """Calculate the homogeneous transform from camera to chessboard frame."""
-    corners2, objp = get_chessboard_corners(image_gray)
-
-    # Solve the PnP problem
     _, rvecs, tvecs = cv2.solvePnP(
-        objp,
-        corners2,
+        object_points,
+        corners,
         camera_matrix,
         dist_coeffs,
         flags=cv2.SOLVEPNP_ITERATIVE,
@@ -83,45 +85,54 @@ class ChessboardCalibration(Node):
     def __init__(self) -> None:
         """Create ChessboardCalibration node."""
         super().__init__("chessboard_calibration")
-        self.srv = self.create_service(
-            Trigger,
+        self._calibrate_camera_srv = self.create_service(
+            CalibrateCamera,
             "~/calibrate_camera",
-            self.calibrate_camera_cb,
+            self._calibrate_camera_cb,
         )
-        self.br = StaticTransformBroadcaster(self)
-        self.logger = self.get_logger()
-        self.cb_group = ReentrantCallbackGroup()
+        self._br = StaticTransformBroadcaster(self)
+        self._logger = self.get_logger()
+        self._cb_group = ReentrantCallbackGroup()
 
-    def calibrate_camera_cb(
+    def _calibrate_camera_cb(
         self,
-        _request: Trigger.Request,
-        response: Trigger.Response,
+        request: CalibrateCamera.Request,
+        response: CalibrateCamera.Response,
     ) -> Trigger.Response:
         """Capture frame, calculate transform."""
-        img_msg = get_img_from_zed(self, self.cb_group)
+        response.success = False
+
+        img_msg = get_img_from_zed(self, self._cb_group)
 
         cv_image_gray = imgmsg_to_grayscale(img_msg)
 
-        mtx, dist_coeffs = get_zed_intrinsics(self, self.cb_group)
+        camera_matrix, dist_coeffs = get_zed_intrinsics(self, self._cb_group)
 
         try:
-            translation, rotation = get_static_transform(
+            corners, object_points = _get_chessboard_corners(
                 cv_image_gray,
-                mtx,
-                dist_coeffs,
+                request.chessboard_width,
+                request.chessboard_height,
+                request.square_size,
             )
         except ChessBoardCornersNotFoundError as e:
             msg = (
-                f"Chessboard corners not found."
+                "Chessboard corners not found."
                 f" Make sure chessboard is visible to camera. Error: {e}"
             )
             # Want to use ROS logger which does not provide exception logging.
             # Log the traceback manually instead.
-            self.logger.error(msg)  # noqa: TRY400
-            self.logger.debug(traceback.format_exc())
+            self._logger.error(msg)  # noqa: TRY400
+            self._logger.debug(traceback.format_exc())
 
-            response.success = False
             return response
+
+        translation, rotation = _get_static_transform(
+            corners,
+            object_points,
+            camera_matrix,
+            dist_coeffs,
+        )
 
         # Calculate the inverse rotation matrix
         inverse_rotation = np.linalg.inv(rotation)
@@ -147,10 +158,10 @@ class ChessboardCalibration(Node):
         )
 
         # Broadcast static transform
-        self.br.sendTransform(transform_stamped)
-        self.logger.info("Calibrated camera successfully.")
-        response.success = True
+        self._br.sendTransform(transform_stamped)
+        self._logger.info("Calibrated camera successfully.")
 
+        response.success = True
         return response
 
 
@@ -165,7 +176,7 @@ def main(args: list[str] | None = None) -> None:
         executor.add_node(node)
 
         executor.spin()
-    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     else:
         rclpy.shutdown()

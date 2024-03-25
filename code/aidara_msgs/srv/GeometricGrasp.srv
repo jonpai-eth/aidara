@@ -1,0 +1,4 @@
+std_msgs/String object_description
+---
+bool success
+geometry_msgs/PoseStamped pose

@@ -10,6 +10,7 @@ from sensor_msgs.msg import Image
 
 from .common import (
     CONTEXT_EXPLANATION,
+    ExampleInteraction,
     VisionMode,
     load_examples,
 )
@@ -47,7 +48,7 @@ def _make_user_message(
 
 
 def _make_example_interaction(
-    example: dict,
+    example: ExampleInteraction,
     examples_dir: pathlib.Path,
     vision_mode: VisionMode,
 ) -> Iterator[dict]:
@@ -85,6 +86,7 @@ def _make_base_prompt(vision_mode: VisionMode) -> dict:
 
     return {
         "model": "gpt-4-vision-preview",
+        "max_tokens": 500,
         "messages": [
             {
                 "role": "system",

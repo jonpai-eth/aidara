@@ -11,6 +11,7 @@ from sensor_msgs.msg import Image
 
 from .common import (
     CONTEXT_EXPLANATION,
+    ExampleInteraction,
     VisionMode,
     load_examples,
 )
@@ -19,7 +20,7 @@ from aidara_common.image_utils import imgmsg_to_pil
 
 
 def _make_example_interaction(
-    example: dict,
+    example: ExampleInteraction,
     examples_dir: pathlib.Path,
     vision_mode: VisionMode,
 ) -> Iterator[dict]:

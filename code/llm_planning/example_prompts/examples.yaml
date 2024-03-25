@@ -73,7 +73,7 @@ examples:
       put this away
     response: |
       take_from_hand()
-      place_on_table(0.9,0.8)
+      place_object_on_table_at(0.9, 0.8)
   # put away 2
   - images:
       left: example_4_left.jpeg
@@ -84,7 +84,7 @@ examples:
       put this away
     response: |
       take_from_hand()
-      place_on_table(0.8,0.3)
+      place_object_on_table_at(0.8, 0.3)
   # ambigious (cannot be resolved)
   - images:
       left: example_11_left.jpeg
@@ -115,7 +115,7 @@ examples:
       place the blue yellow cup left of the yellow plate
     response: |
       pick_object_from_table("yellow plate")
-      place_on_table(0.7, 0.2)
+      place_object_on_table_at(0.7, 0.2)
   # put into/ onto
   - images:
       left: example_9_left.jpeg
@@ -126,7 +126,7 @@ examples:
       put the matchbox onto the blue plate
     response: |
       pick_object_from_table("matchbox")
-      place_on_table(0.1, 0.7)
+      place_object_on_table_at(0.1, 0.7)
   # out of range
   - images:
       left: example_3_left.jpeg

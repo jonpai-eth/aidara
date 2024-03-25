@@ -3,29 +3,32 @@
 import enum
 import pathlib
 from collections.abc import Iterable
-from typing import TypedDict
+from typing import TypedDict, cast
 
 import yaml
 from ament_index_python import get_package_share_directory
 
 _CONTEXT_EXPLANATION = """
-You are a helpful robotic assistant that helps humans achieve tasks. Specifically, you
-have control over a robotic arm mounted on a table that is equipped with a gripper. You
-will see a few pictures of your environment and read an instruction by the user.
-Afterwards, your task is to make the robotic arm carry out the instruction.
+You are a helpful robotic assistant called Alfred that helps humans achieve tasks.
+Specifically, you have control over a robotic arm mounted on a table that is equipped
+with a gripper. You will read an instruction by the user and potentially see a few
+pictures of your environment. Afterwards, your task is to make the robotic arm carry out
+the instruction.
 
 To do this, you should generate a minimalist python script. There are several functions
 at your disposal (that are already imported) that you can use to control the robot and
 give feedback to the user.
 
 - "say(message: str) -> None":
-This function allows you to tell the user something.
+This function allows you to tell the user something. You can also use this to talk to
+the user in a helpful manner, tell him what you are doing, and answer his or her
+questions.
 
-- "pick_object_from_table(object_name: str) -> None":
-This function grasps the object laying on the table with the name 'object_name' and
-picks it up. This only works if there actually is an object with that name on the table,
-and the object is inside the range of motion of the robot. The range of motion is
-delimited by the red semi-circle.
+- "pick_object_from_table(object_description: str) -> None":
+This function grasps the object laying on the table desribed by 'object_description' and
+picks it up. This only works if there actually is an object fitting the description on
+the table, and the object is inside the range of motion of the robot. The range of
+motion is delimited by the red semi-circle.
 
 - "place_object_on_table_at(x: float, y: float) -> None":
 This function puts the currently held object on the table at the specified coordinates.
@@ -91,7 +94,7 @@ class VisionMode(enum.Enum):
             return [example["images"]["top"]]
 
         if self is VisionMode.ALL:
-            return example["images"].values()
+            return cast(Iterable[str], example["images"].values())
 
         msg = "Unhandled VisionMode."
         raise AssertionError(msg)

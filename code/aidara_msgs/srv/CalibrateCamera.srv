@@ -1,0 +1,8 @@
+# number of inner corners (one less than the number of squares) in the long dimension
+uint8 chessboard_width
+# number of inner corners (one less than the number of squares) in the short dimension
+uint8 chessboard_height
+# side length of a square in m
+float32 square_size
+---
+bool success
