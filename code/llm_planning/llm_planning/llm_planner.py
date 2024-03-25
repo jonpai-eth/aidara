@@ -36,12 +36,17 @@ class LLMPlanner(Node):
         llm_type: Literal["gemini", "gpt-4"],
         examples_vision_mode: VisionMode,
         request_vision_mode: VisionMode,
+        *,
+        is_dry_run: bool,
     ) -> None:
         """Create LLMPlanner node."""
         super().__init__("llm_planner")
         self._llm_name = llm_type
         self._llm = get_interface(llm_type, examples_vision_mode)
+
         self._camera_names = request_vision_mode.get_camera_names()
+
+        self._is_dry_run = is_dry_run
 
         self._planning_cb_group = MutuallyExclusiveCallbackGroup()
         self._instruction_sub = self.create_subscription(
@@ -66,6 +71,12 @@ class LLMPlanner(Node):
             self.get_logger().error(str(e))
             return
 
+        if self._is_dry_run:
+            self.get_logger().info(
+                f"Generated code:\n{source}\nWill not execute since this is a dry run.",
+            )
+            return
+
         source = textwrap.indent(source, "\t")
         source = _EXEC_TEMPLATE.safe_substitute(source=source)
 
@@ -85,8 +96,16 @@ def main(args: list[str] | None = None) -> None:
         prog="ros2 run llm_planning llm_planner",
         description="Top-level planner using a LLM.",
     )
-    parser.add_argument("--robot", choices=["franka", "staubli"], default="franka")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "If set, do not execute the generated code."
+            " This prints the response of the LLM and returns."
+        ),
+    )
     parser.add_argument("--llm", choices=["gemini", "gpt-4"], default="gpt-4")
+    parser.add_argument("--robot", choices=["franka", "staubli"], default="franka")
     parser.add_argument(
         "--examples-vision-mode",
         type=VisionMode,
@@ -108,6 +127,7 @@ def main(args: list[str] | None = None) -> None:
             cli_args.llm,
             cli_args.examples_vision_mode,
             cli_args.request_vision_mode,
+            is_dry_run=cli_args.dry_run,
         )
         actions_node = LLMActions(f"{cli_args.robot}_config.yaml")
 

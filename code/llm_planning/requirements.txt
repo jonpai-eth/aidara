@@ -1,2 +1,4 @@
 google.generativeai
 openai
+pillow
+pyyaml

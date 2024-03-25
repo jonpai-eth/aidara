@@ -11,6 +11,8 @@ cornersubpix
 cv
 cx
 cy
+eef
+effector
 enum
 extrinsics
 fx
@@ -39,6 +41,7 @@ OpenCV
 param
 PIL
 PnP
+PoseStamped
 pre
 py
 quaternion
