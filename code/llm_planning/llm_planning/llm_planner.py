@@ -10,6 +10,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
 from rclpy.node import Node
 from std_msgs.msg import String
+from std_srvs.srv import Trigger
 
 from .llm_interfaces import LLMInterfaceError, VisionMode, get_interface
 from aidara_common.image_utils import get_all_images
@@ -48,16 +49,22 @@ class LLMPlanner(Node):
 
         self._is_dry_run = is_dry_run
 
-        self._planning_cb_group = MutuallyExclusiveCallbackGroup()
+        self._llm_cb_group = MutuallyExclusiveCallbackGroup()
         self._instruction_sub = self.create_subscription(
             String,
             "/speech2text",
-            self._plan,
+            self._instruction_cb,
             1,
-            callback_group=self._planning_cb_group,
+            callback_group=self._llm_cb_group,
+        )
+        self._reset_history_service = self.create_service(
+            Trigger,
+            "~/reset_history",
+            self._reset_history_cb,
+            callback_group=self._llm_cb_group,
         )
 
-    def _plan(self, instruction: String) -> None:
+    def _instruction_cb(self, instruction: String) -> None:
         """Carry out the instruction on the robot."""
         images = get_all_images(self, ReentrantCallbackGroup(), self._camera_names)
 
@@ -88,6 +95,16 @@ class LLMPlanner(Node):
             return
 
         exec(code, ACTION_COLLECTION)  # noqa: S102
+
+    def _reset_history_cb(
+        self,
+        _request: Trigger.Request,
+        response: Trigger.Response,
+    ) -> Trigger.Response:
+        self._llm.reset_history()
+
+        response.success = True
+        return response
 
 
 def main(args: list[str] | None = None) -> None:

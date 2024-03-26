@@ -30,3 +30,8 @@ class LLMInterface(abc.ABC):
     def send_request(self, instruction: str, images: Iterable[Image]) -> str:
         """Query the LLM given an user instruction and the current camera image."""
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def reset_history(self) -> None:
+        """Delete the conversation history but keep the example interactions."""
+        raise NotImplementedError

@@ -77,6 +77,12 @@ class GeminiInterface(LLMInterface):
 
         self._base_prompt = _make_base_prompt(examples_vision_mode)
 
+        msg = (
+            "Gemini w/ vision does not support multi-turn conversations yet, which is"
+            " required for us to show it our examples. So this just doesn't work yet."
+        )
+        raise NotImplementedError(msg)
+
     def send_request(self, instruction: str, images: Iterable[Image]) -> str:
         """Query Gemini given an user instruction and current camera images."""
         new_prompt = {
@@ -92,3 +98,9 @@ class GeminiInterface(LLMInterface):
         response.resolve()
 
         return response.text
+
+    def reset_history(self) -> None:
+        """Delete the conversation history but keep the example interactions."""
+        # Gemini w/ vision does not support multi-turn conversations at all, currently
+        # not even send_request will work. So we can't really implement this yet either.
+        raise NotImplementedError
