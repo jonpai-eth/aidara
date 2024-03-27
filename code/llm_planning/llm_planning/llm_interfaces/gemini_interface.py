@@ -7,6 +7,7 @@ from collections.abc import Iterable, Iterator
 
 import google.generativeai as genai
 import PIL.Image
+from google.api_core.exceptions import ResourceExhausted
 from sensor_msgs.msg import Image
 
 from .common import (
@@ -15,7 +16,7 @@ from .common import (
     VisionMode,
     load_examples,
 )
-from .llm_interface import LLMInterface
+from .llm_interface import LLMInterface, LLMInterfaceError
 from aidara_common.image_utils import imgmsg_to_pil
 
 
@@ -42,7 +43,7 @@ def _make_example_interaction(
     }
 
 
-def _make_base_prompt(vision_mode: VisionMode) -> list:
+def _make_example_history(vision_mode: VisionMode) -> list:
     example_collection, examples_dir = load_examples()
 
     example_interactions = itertools.chain(
@@ -72,35 +73,35 @@ class GeminiInterface(LLMInterface):
     def __init__(self, examples_vision_mode: VisionMode) -> None:
         """Create Gemini interface."""
         genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-        self._model = genai.GenerativeModel("gemini-pro-vision")
+        self._model = genai.GenerativeModel("gemini-1.5-pro-latest")
         self._generation_config = genai.types.GenerationConfig(candidate_count=1)
 
-        self._base_prompt = _make_base_prompt(examples_vision_mode)
-
-        msg = (
-            "Gemini w/ vision does not support multi-turn conversations yet, which is"
-            " required for us to show it our examples. So this just doesn't work yet."
-        )
-        raise NotImplementedError(msg)
+        self._example_history = _make_example_history(examples_vision_mode)
+        self._chat = self._model.start_chat(history=self._example_history)
 
     def send_request(self, instruction: str, images: Iterable[Image]) -> str:
         """Query Gemini given an user instruction and current camera images."""
-        new_prompt = {
+        new_message = {
             "role": "user",
             "parts": [instruction, *(imgmsg_to_pil(img) for img in images)],
         }
-        prompt = [*self._base_prompt, new_prompt]
 
-        response = self._model.generate_content(
-            prompt,
-            generation_config=self._generation_config,
-        )
+        try:
+            response = self._chat.send_message(
+                new_message,
+                generation_config=self._generation_config,
+            )
+        except ResourceExhausted as e:
+            msg = (
+                "Exceeded the rate limit of Gemini 1.5 (2 requests / min)."
+                " Please wait a bit before sending another request."
+            )
+            raise LLMInterfaceError(msg) from e
+
         response.resolve()
 
         return response.text
 
     def reset_history(self) -> None:
         """Delete the conversation history but keep the example interactions."""
-        # Gemini w/ vision does not support multi-turn conversations at all, currently
-        # not even send_request will work. So we can't really implement this yet either.
-        raise NotImplementedError
+        self._chat = self._model.start_chat(history=self._example_history)
