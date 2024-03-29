@@ -137,3 +137,124 @@ examples:
       give me the umbrella
     response: |
       say("The umbrella does not lie within the range of the robot.")
+  # say
+  - images:
+      left: example_5_left.jpeg
+      right: example_5_right.jpeg
+      top: example_5_top.jpeg
+    is_img_required: False
+    prompt: >
+      How tall is the eiffel tower?
+    response: |
+      say("The eiffel tower is 300 meters tall.")
+  # say
+  - images:
+      left: example_1_left.jpeg
+      right: example_1_right.jpeg
+      top: example_1_top.jpeg
+    is_img_required: False
+    prompt: >
+      How are you?
+    response: |
+      say("I am fine. Thank you. How are you?")
+  # say
+  - images:
+      left: example_7_left.jpeg
+      right: example_7_right.jpeg
+      top: example_7_top.jpeg
+    is_img_required: False
+    prompt: >
+      What's your name?
+    response: |
+      say("My name is Alfred.")
+  # say
+  - images:
+      left: example_12_left.jpeg
+      right: example_12_right.jpeg
+      top: example_12_top.jpeg
+    is_img_required: False
+    prompt: >
+      Who painted the Mona Lisa?
+    response: |
+      say("The Mona Lisa was painted by Leonardo da Vinci.")
+  # say
+  - images:
+      left: example_9_left.jpeg
+      right: example_9_right.jpeg
+      top: example_9_top.jpeg
+    is_img_required: False
+    prompt: >
+      Can you tell me a joke?
+    response: |
+      say("Why did the tomato turn red? Because it saw the salad dressing!")
+  # say
+  - images:
+      left: example_9_left.jpeg
+      right: example_9_right.jpeg
+      top: example_9_top.jpeg
+    is_img_required: False
+    prompt: >
+      Can you explain the difference between a crocodile and an alligator?
+    response: |
+      say("The diffrence between a crocodile and an alligator is that crocodiles have a
+      V-shaped snout, while alligators have a U-shaped snout.
+      Also, crocodiles are more aggressive than alligators.")
+  # say
+  - images:
+      left: example_9_left.jpeg
+      right: example_9_right.jpeg
+      top: example_9_top.jpeg
+    is_img_required: False
+    prompt: >
+      Can you give me a recipe for a cheese cake?
+    response: |
+      say("To make a cheese cake, you need the following ingredients:
+      200g biscuits, 100g butter, 500g cream cheese, 200g sugar, 200g sour cream,
+      3 eggs, 1 vanilla pod, 1 lemon, 1 tbsp cornstarch, 1 pinch of salt.
+      For the crust, crush the biscuits and mix them with the melted butter.
+      Press the mixture into the bottom of a springform pan.
+      For the filling, mix the cream cheese, sugar, sour cream, eggs, vanilla,
+      lemon juice, cornstarch, and salt until smooth.
+      Pour the filling over the crust and bake the cake for 1 hour at 160°C.
+      Let the cake cool down and refrigerate it for at least 4 hours before serving.
+      Enjoy!")
+    # Reasoning/multi turn/success
+  - images:
+      left: example_10_left.jpeg
+      right: example_10_right.jpeg
+      top: example_10_top.jpeg
+    is_img_required: True
+    prompt: >
+      It rains outside. What can you give me to keep me dry?
+    response: |
+      say("I can give you an umbrella to keep you dry.")
+  - images:
+      left: example_10_left.jpeg
+      right: example_10_right.jpeg
+      top: example_10_top.jpeg
+    is_img_required: True
+    prompt: >
+      Can you give it to me.
+    response: |
+      pick_object_from_table("umbrella")
+      give_to_hand()
+    # Reasoning/multi turn/failure
+  - images:
+      left: example_8_left.jpeg
+      right: example_8_right.jpeg
+      top: example_8_top.jpeg
+    is_img_required: True
+    prompt: >
+      I have to brush my teeth. What do I need for that?
+    response: |
+      say("You need a toothbrush and toothpaste to do that.")
+  - images:
+      left: example_8_left.jpeg
+      right: example_8_right.jpeg
+      top: example_8_top.jpeg
+    is_img_required: True
+    prompt: >
+      Can you give it to me.
+    response: |
+      say("Sorry, I cannot help you with that. There is no toothbrush or toothpaste
+      in the scene.")
