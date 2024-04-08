@@ -67,6 +67,7 @@ def get_all_images(
 def get_zed_intrinsics(
     node: Node,
     callback_group: ReentrantCallbackGroup,
+    camera_name: str = "zed",
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Get camera intrinsics from ZED camera.
@@ -74,6 +75,7 @@ def get_zed_intrinsics(
     Args:
         node: ROS2 node.
         callback_group: Reentrant callback group for the subscriber.
+        camera_name: Name of the camera as specified during startup
 
     Returns:
         Tuple:
@@ -85,7 +87,7 @@ def get_zed_intrinsics(
     # Get CameraInfo message from topic
     cam_info = get_latest_msg_from_topic(
         node,
-        "/zed/zed_node/left/camera_info",
+        f"/{camera_name}/zed_node/left/camera_info",
         CameraInfo,
         callback_group,
     )

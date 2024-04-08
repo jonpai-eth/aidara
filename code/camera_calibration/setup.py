@@ -1,8 +1,12 @@
 """Setup for the camera_calibration package."""
 
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
 package_name = "camera_calibration"
+package_dir = Path(__file__).resolve().parent
+share_dir = Path("share")
 
 setup(
     name=package_name,
@@ -12,6 +16,14 @@ setup(
         ("share/ament_index/resource_index/packages",
             ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
+        (
+            str(share_dir / package_name / "config"),
+            [
+                str(config.relative_to(package_dir))
+                for config in (package_dir / "config").iterdir()
+                if config.is_file()
+            ],
+        ),
     ],
     install_requires=["setuptools"],
     zip_safe=True,

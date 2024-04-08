@@ -139,7 +139,7 @@
             qos_durability: 2 # '1': TRANSIENT_LOCAL - '2': VOLATILE
         
         body_tracking:
-            bt_enabled: false # True to enable Body Tracking
+            bt_enabled: true # True to enable Body Tracking
             model: 'HUMAN_BODY_MEDIUM' # 'HUMAN_BODY_FAST', 'HUMAN_BODY_MEDIUM', 'HUMAN_BODY_ACCURATE'
             body_format: 'BODY_38' # 'BODY_18','BODY_34','BODY_38','BODY_70'
             allow_reduced_precision_inference: false # Allow inference to run at a lower precision to improve runtime and memory usage

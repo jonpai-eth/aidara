@@ -1,3 +1,4 @@
+string camera_name
 # number of inner corners (one less than the number of squares) in the long dimension
 uint8 chessboard_width
 # number of inner corners (one less than the number of squares) in the short dimension
