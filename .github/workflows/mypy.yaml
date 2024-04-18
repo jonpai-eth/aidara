@@ -35,4 +35,4 @@ jobs:
           level: warning
           fail_on_error: true
           workdir: ${{ matrix.package }}
-          mypy_flags: "--follow-imports=silent"
+          mypy_flags: "--ignore-missing-imports"
