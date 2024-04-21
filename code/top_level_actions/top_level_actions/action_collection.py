@@ -6,7 +6,7 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger
 
 from .llm_actions_node import LLMActions
-from aidara_common.geometry_utils import convert
+from aidara_common.tf_utils import convert
 from aidara_msgs.srv import GeometricGrasp, TargetPose, Tf2GetTransform
 
 
