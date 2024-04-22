@@ -12,6 +12,7 @@ exclude = ["dependencies/**"]
 namespace-packages = [
     "code/aidara_common",
     "code/camera_calibration",
+    "code/geometric_grasp",
     "code/hand_position",
     "code/llm_planning",
     "code/speech2text",
@@ -37,6 +38,7 @@ known-local-folder = [
     "aidara_common",
     "aidara_msgs",
     "camera_calibration",
+    "geometric_grasp",
     "hand_position",
     "llm_planning",
     "speech2text",

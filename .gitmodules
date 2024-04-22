@@ -1,3 +1,3 @@
-[submodule "dependencies/zed-ros2-wrapper"]
-	path = dependencies/zed-ros2-wrapper
-	url = https://github.com/stereolabs/zed-ros2-wrapper.git
+[submodule "dependencies/lang-segment-anything"]
+	path = dependencies/lang-segment-anything
+	url = https://github.com/luca-medeiros/lang-segment-anything.git

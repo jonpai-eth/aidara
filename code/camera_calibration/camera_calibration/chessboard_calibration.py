@@ -1,26 +1,25 @@
 """ROS service that opens ZED camera, grabs frame and returns transformation."""
 
-import pathlib
 import traceback
 
 import cv2
 import numpy as np
 import rclpy
 import ros2_numpy as rnp
-import yaml
-from ament_index_python import get_package_share_directory
 from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile
 from scipy.spatial.transform import Rotation
-from tf2_ros import StaticTransformBroadcaster
+from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
 
 from aidara_common.image_utils import (
     get_img_from_zed,
     get_zed_intrinsics,
     imgmsg_to_grayscale,
 )
+from aidara_common.tf_utils import TfMixin
 from aidara_msgs.srv import CalibrateCamera
 
 
@@ -78,7 +77,7 @@ def _get_static_transform(
     # Construct the transformation matrix
     rot_mat, _ = cv2.Rodrigues(rvecs)
 
-    return tvecs, rot_mat
+    return tvecs.squeeze(), rot_mat
 
 
 def _make_zed_to_opencv_transform(cam_frame_name: str) -> TransformStamped:
@@ -87,63 +86,39 @@ def _make_zed_to_opencv_transform(cam_frame_name: str) -> TransformStamped:
     tf_msg.header.frame_id = cam_frame_name
     tf_msg.child_frame_id = cam_frame_name + "_opencv"
 
-    rotation_msg = rnp.msgify(Quaternion, np.array([0.70710678, 0.0, 0.0, -0.70710678]))
+    # Rotate 90 degrees around z-axis
+    rotation_msg = rnp.msgify(Quaternion, np.array([0.0, -0.70710678, 0.70710678, 0.0]))
     tf_msg.transform.rotation = rotation_msg
 
     return tf_msg
 
 
-class ChessboardCalibration(Node):
+class ChessboardCalibration(Node, TfMixin):
     """Node that calculates the homogeneous transform from cam to chessboard frame."""
 
     def __init__(self) -> None:
         """Create ChessboardCalibration node."""
-        super().__init__("chessboard_calibration")
+        Node.__init__(self, "chessboard_calibration")
+        TfMixin.__init__(self)
+
+        self._calib_cb_group = ReentrantCallbackGroup()
         self._calibrate_camera_srv = self.create_service(
             CalibrateCamera,
             "~/calibrate_camera",
             self._calibrate_camera_cb,
+            callback_group=self._calib_cb_group,
         )
-        self._br = StaticTransformBroadcaster(self)
+
+        qos = QoSProfile(
+            depth=1,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            history=HistoryPolicy.KEEP_ALL,
+        )
+        self._static_br = StaticTransformBroadcaster(self, qos=qos)
+
+        self._br = TransformBroadcaster(self)
+
         self._cb_group = ReentrantCallbackGroup()
-
-
-        self._br.sendTransform(self._read_config())
-
-
-    def _read_config(self) -> TransformStamped:
-        """Reads constant transform from config and returns it as TFStamped msg."""
-        share_dir = get_package_share_directory("camera_calibration")
-        with (pathlib.Path(share_dir) / "config" /"config.yaml").open() as f:
-            config = yaml.safe_load(f)
-
-        chessboard_to_world_frame_config = config["chessboard_to_world_frame"]
-
-
-        x = chessboard_to_world_frame_config["position"]["x"]
-        y = chessboard_to_world_frame_config["position"]["y"]
-        z = chessboard_to_world_frame_config["position"]["z"]
-        translation = np.array([x, y, z], dtype=float)
-
-        axis_x = chessboard_to_world_frame_config["orientation"]["axis"]["x"]
-        axis_y = chessboard_to_world_frame_config["orientation"]["axis"]["y"]
-        axis_z = chessboard_to_world_frame_config["orientation"]["axis"]["z"]
-        axis = np.array([axis_x, axis_y, axis_z])
-
-        theta = chessboard_to_world_frame_config["orientation"]["theta"]
-        rotation = Rotation.from_rotvec(axis * theta)
-        quaternion = rotation.as_quat()
-
-        tf_msg = TransformStamped()
-        tf_msg.header.frame_id = "world"
-        tf_msg.child_frame_id = "chessboard"
-
-        tf_msg.transform.translation = rnp.msgify(Vector3, translation)
-        tf_msg.transform.rotation = rnp.msgify(Quaternion, quaternion)
-
-        return tf_msg
-
-
 
     def _calibrate_camera_cb(
         self,
@@ -166,7 +141,9 @@ class ChessboardCalibration(Node):
         cv_image_gray = imgmsg_to_grayscale(img_msg)
 
         camera_matrix, dist_coeffs = get_zed_intrinsics(
-            self, self._cb_group, camera_name,
+            self,
+            self._cb_group,
+            camera_name,
         )
 
         try:
@@ -176,15 +153,16 @@ class ChessboardCalibration(Node):
                 request.chessboard_height,
                 request.square_size,
             )
-        except ChessBoardCornersNotFoundError as e:
+        except ChessBoardCornersNotFoundError:
             msg = (
-                "Chessboard corners not found."
-                f" Make sure chessboard is visible to camera. Error: {e}"
+                "Chessboard corners not found.\n"
+                "Make sure chessboard is visible to camera and chessboard "
+                "parameters are correct. Error:"
             )
             # Want to use ROS logger which does not provide exception logging.
             # Log the traceback manually instead.
             self.get_logger().error(msg)
-            self.get_logger().debug(traceback.format_exc())
+            self.get_logger().info(traceback.format_exc())
 
             return response
 
@@ -195,34 +173,42 @@ class ChessboardCalibration(Node):
             dist_coeffs,
         )
 
-        # Calculate the inverse rotation matrix
-        inverse_rotation = np.linalg.inv(rotation)
-
-        # Calculate the inverse translation vector
-        inverse_translation = -np.dot(
-            inverse_rotation,
-            translation,
-        ).squeeze()
+        camera_chessboard_frame = camera_name + "_chessboard"
 
         transform_stamped = TransformStamped()
         transform_stamped.header.stamp = self.get_clock().now().to_msg()
-        transform_stamped.header.frame_id = "chessboard"
-        transform_stamped.child_frame_id = camera_zed_frame + "_opencv"
+        transform_stamped.header.frame_id = camera_zed_frame + "_opencv"
+        transform_stamped.child_frame_id = camera_chessboard_frame
 
         transform_stamped.transform.translation = rnp.msgify(
             Vector3,
-            inverse_translation,
+            translation,
         )
         transform_stamped.transform.rotation = rnp.msgify(
             Quaternion,
-            Rotation.from_matrix(inverse_rotation).as_quat(),
+            Rotation.from_matrix(rotation).as_quat(canonical=False),
         )
 
-        # Broadcast static transform
-        self._br.sendTransform(transform_stamped)
-
         # Broadcast OpenCV to ZED transformation
-        self._br.sendTransform(_make_zed_to_opencv_transform(camera_zed_frame))
+        self._static_br.sendTransform(
+            _make_zed_to_opencv_transform(camera_zed_frame),
+        )
+
+        # Broadcast <camera_zed_frame>_opencv to <cam_name>_chessboard transform
+        self._static_br.sendTransform(transform_stamped)  # had to change to static
+
+        cam_link_frame_name = camera_name + "_camera_link"
+
+        tf_cam_chessboard_to_cam_link = self._get_tf(
+            cam_link_frame_name,
+            camera_chessboard_frame,
+        )
+
+        tf_cam_chessboard_to_cam_link.header.frame_id = "chessboard"
+        tf_cam_chessboard_to_cam_link.child_frame_id = cam_link_frame_name
+
+        self._static_br.sendTransform(tf_cam_chessboard_to_cam_link)
+
         self.get_logger().info("Calibrated camera successfully.")
 
         response.success = True

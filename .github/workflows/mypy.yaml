@@ -13,6 +13,7 @@ jobs:
           [
             "code/aidara_common",
             "code/camera_calibration",
+            "code/geometric_grasp",
             "code/hand_position",
             "code/llm_planning",
             "code/speech2text",

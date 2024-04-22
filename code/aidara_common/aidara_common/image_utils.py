@@ -133,3 +133,9 @@ def jpg_to_base64(image: pathlib.Path) -> str:
     """Read a .jpg file and return the b64 encoding."""
     with image.open("rb") as f:
         return base64.b64encode(f.read()).decode("utf-8")
+
+
+def mono8_to_imgmsg(np_img: np.ndarray) -> Image:
+    """Convert a mono8 2D np array to an Image msg."""
+    np_img = np_img.astype(np.uint8)
+    return CvBridgeSingleton().cv2_to_imgmsg(np_img, encoding="mono8")

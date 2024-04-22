@@ -1,12 +1,8 @@
-"""Setup for the camera_calibration package."""
-
-from pathlib import Path
+"""Setup for the geometric_grasp package."""
 
 from setuptools import find_packages, setup
 
-package_name = "camera_calibration"
-package_dir = Path(__file__).resolve().parent
-share_dir = Path("share")
+package_name = "geometric_grasp"
 
 setup(
     name=package_name,
@@ -18,13 +14,14 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Artur von Ruffer",
-    maintainer_email="avonruffer@ethz.ch",
-    description="Publishes transformation from camera to chessboard frame.",
+    maintainer="felix",
+    maintainer_email="fehegg@student.ethz.ch",
+    description="Geometric grasp generation",
     license="MIT",
     entry_points={
         "console_scripts": [
-            "chessboard_calibration = camera_calibration.chessboard_calibration:main",
+            "geometric_grasp_server = geometric_grasp.geometric_grasp_server:main",
+            "dummy_client = geometric_grasp.dummy_client:main",
         ],
     },
 )
