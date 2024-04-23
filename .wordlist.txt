@@ -69,6 +69,7 @@ quaternion
 rect
 Reentrant
 ReentrantCallbackGroup
+rgb
 ros
 ROS
 rviz

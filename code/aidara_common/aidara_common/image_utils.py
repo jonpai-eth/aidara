@@ -125,7 +125,7 @@ def imgmsg_to_pil(image: Image) -> PIL.Image.Image:
 
 
 def imgmsg_to_rgb(image: Image) -> npt.NDArray:
-    """Convert Image msg to grayscale."""
+    """Convert Image msg to rgb."""
     return CvBridgeSingleton().imgmsg_to_cv2(image, "rgb8")
 
 
