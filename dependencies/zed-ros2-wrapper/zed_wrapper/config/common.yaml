@@ -148,7 +148,7 @@
             enable_body_fitting: false # Defines if the body fitting will be applied
             enable_tracking: true # Defines if the object detection will track objects across images flow
             prediction_timeout_s: 0.5 # During this time [sec], the skeleton will have OK state even if it is not detected. Set this parameter to 0 to disable SDK predictions
-            confidence_threshold: 50.0 # [DYNAMIC] - Minimum value of the detection confidence of skeleton key points [0,99]
+            confidence_threshold: 20.0 # [DYNAMIC] - Minimum value of the detection confidence of skeleton key points [0,99]
             minimum_keypoints_threshold: 5 # [DYNAMIC] - Minimum number of skeleton key points to be detected for a valid skeleton
             qos_history: 1 # '1': KEEP_LAST - '2': KEEP_ALL
             qos_depth: 1 # Queue size if using KEEP_LAST
