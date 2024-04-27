@@ -78,6 +78,7 @@ rviz
 RViz
 seg
 segmap
+SpeechToText
 srv
 srvs
 str

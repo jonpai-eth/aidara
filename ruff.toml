@@ -15,7 +15,7 @@ namespace-packages = [
     "code/geometric_grasp",
     "code/hand_position",
     "code/llm_planning",
-    "code/speech2text",
+    "code/speech_to_text",
     "code/text_to_speech",
     "code/tf2_service",
     "code/top_level_actions"
@@ -41,7 +41,7 @@ known-local-folder = [
     "geometric_grasp",
     "hand_position",
     "llm_planning",
-    "speech2text",
+    "speech_to_text",
     "text_to_speech",
     "tf2_service",
     "top_level_actions"

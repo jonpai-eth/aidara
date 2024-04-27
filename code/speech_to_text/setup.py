@@ -1,7 +1,8 @@
-"""Setup for the speech2text package."""
+"""Setup for the speech_to_text package."""
+
 from setuptools import find_packages, setup
 
-package_name = "speech2text"
+package_name = "speech_to_text"
 
 setup(
     name=package_name,
@@ -15,9 +16,9 @@ setup(
     zip_safe=True,
     maintainer="Joel Kaufmann",
     maintainer_email="jkaufmann@ethz.ch",
-    description="Speech2Text ROS 2 Node.",
+    description="speech recognition.",
     license="MIT",
     entry_points={
-        "console_scripts": ["speech2text = speech2text.speech2text:main"],
+        "console_scripts": ["speech_to_text = speech_to_text.speech_to_text:main"],
     },
 )

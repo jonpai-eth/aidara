@@ -52,7 +52,7 @@ class LLMPlanner(Node):
         self._llm_cb_group = MutuallyExclusiveCallbackGroup()
         self._instruction_sub = self.create_subscription(
             String,
-            "/speech2text",
+            "/speech_to_text",
             self._instruction_cb,
             1,
             callback_group=self._llm_cb_group,
