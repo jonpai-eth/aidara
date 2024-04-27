@@ -1,10 +1,12 @@
 """Dummy client that calls the geometric_grasp_server to get a grasp position."""
 
 import argparse
+from typing import cast
 
 import rclpy
 from rclpy.node import Node
 
+from aidara_common.service_utils import AsyncServiceCall
 from aidara_msgs.srv import GeometricGrasp
 
 
@@ -14,7 +16,7 @@ class DummyClient(Node):
     def __init__(self) -> None:
         """Initialize client."""
         super().__init__("geometric_grasp_cli_client")
-        self.client = self.create_client(
+        self._client = self.create_client(
             GeometricGrasp,
             "/geometric_grasp",
         )
@@ -24,26 +26,33 @@ class DummyClient(Node):
         request = GeometricGrasp.Request()
         request.object_description.data = object_name
 
-        while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("service not available, waiting again...")
-
-        future = self.client.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
-        if not future.result().success:
+        result = AsyncServiceCall.create_and_resolve_with_eh(
+            self,
+            self._client,
+            request,
+            n_retries=0,
+        )
+        if not result.success:
             self.get_logger().error("The object could not be detected.")
             return
-        self.get_logger().info(f"target_pose: {future.result().pose}")
+
+        self.get_logger().info(
+            f"target_pose: {cast(GeometricGrasp.Result, result).pose}",
+        )
 
 
 def main(args: list[str] | None = None) -> None:
     """Run client to get a grasp position."""
     rclpy.init(args=args)
 
-    parser = argparse.ArgumentParser(description="ROS 2 Dummy Client")
+    parser = argparse.ArgumentParser(
+        prog="ros2 run geometric_grasp debug_cli",
+        description="Geometric Grasp CLI",
+    )
     parser.add_argument(
         "--object",
         type=str,
-        help="What object to grasp",
+        help="What object to grasp.",
         default="bottle",
     )
     cli_args, _ = parser.parse_known_args()

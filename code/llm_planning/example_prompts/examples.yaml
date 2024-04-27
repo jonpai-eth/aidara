@@ -1,15 +1,5 @@
 path_images: llm_planning/examples/pictures/
 examples:
-  # no object found
-  - images:
-      left: example_1_left.jpeg
-      right: example_1_right.jpeg
-      top: example_1_top.jpeg
-    is_img_required: True
-    prompt: >
-      give me the apple
-    response: |
-      say("Could not find an apple in the scene.")
   # give 1
   - images:
       left: example_7_left.jpeg
@@ -21,6 +11,7 @@ examples:
     response: |
       pick_object_from_table("blue pen")
       give_to_hand()
+      retract()
   # give 2
   - images:
       left: example_10_left.jpeg
@@ -32,6 +23,7 @@ examples:
     response: |
       pick_object_from_table("yellow plate")
       give_to_hand()
+      retract()
   # give 3
   - images:
       left: example_9_left.jpeg
@@ -43,6 +35,7 @@ examples:
     response: |
       pick_object_from_table("matchbox")
       give_to_hand()
+      retract()
   # hold 1
   - images:
       left: example_12_left.jpeg
@@ -63,6 +56,7 @@ examples:
       take this
     response: |
       take_from_hand()
+      retract()
   # put away 1
   - images:
       left: example_12_left.jpeg
@@ -74,6 +68,7 @@ examples:
     response: |
       take_from_hand()
       place_object_on_table_at(0.9, 0.8)
+      retract()
   # put away 2
   - images:
       left: example_4_left.jpeg
@@ -85,26 +80,7 @@ examples:
     response: |
       take_from_hand()
       place_object_on_table_at(0.8, 0.3)
-  # ambigious (cannot be resolved)
-  - images:
-      left: example_11_left.jpeg
-      right: example_11_right.jpeg
-      top: example_11_top.jpeg
-    is_img_required: True
-    prompt: >
-      give me this
-    response: |
-      say("Could not find suitable action.")
-  # put back occupied
-  - images:
-      left: example_1_left.jpeg
-      right: example_1_right.jpeg
-      top: example_1_top.jpeg
-    is_img_required: True
-    prompt: >
-      place the green pen in the top right corner of the table
-    response: |
-      say("This spot is already occupied.")
+      retract()
   # put next to
   - images:
       left: example_8_left.jpeg
@@ -112,10 +88,11 @@ examples:
       top: example_8_top.jpeg
     is_img_required: True
     prompt: >
-      place the blue yellow cup left of the yellow plate
+      place the yellow cup left of the yellow plate
     response: |
-      pick_object_from_table("yellow plate")
+      pick_object_from_table("yellow cup")
       place_object_on_table_at(0.7, 0.2)
+      retract()
   # put into/ onto
   - images:
       left: example_9_left.jpeg
@@ -127,16 +104,7 @@ examples:
     response: |
       pick_object_from_table("matchbox")
       place_object_on_table_at(0.1, 0.7)
-  # out of range
-  - images:
-      left: example_3_left.jpeg
-      right: example_3_right.jpeg
-      top: example_3_top.jpeg
-    is_img_required: True
-    prompt: >
-      give me the umbrella
-    response: |
-      say("The umbrella does not lie within the range of the robot.")
+      retract()
   # say
   - images:
       left: example_5_left.jpeg
@@ -146,7 +114,8 @@ examples:
     prompt: >
       How tall is the eiffel tower?
     response: |
-      say("The eiffel tower is 300 meters tall.")
+      say("The eiffel tower is 300 meters tall. It is 330 meters tall including
+      antennas.")
   # say
   - images:
       left: example_1_left.jpeg
@@ -187,37 +156,6 @@ examples:
       Can you tell me a joke?
     response: |
       say("Why did the tomato turn red? Because it saw the salad dressing!")
-  # say
-  - images:
-      left: example_9_left.jpeg
-      right: example_9_right.jpeg
-      top: example_9_top.jpeg
-    is_img_required: False
-    prompt: >
-      Can you explain the difference between a crocodile and an alligator?
-    response: |
-      say("The diffrence between a crocodile and an alligator is that crocodiles have a
-      V-shaped snout, while alligators have a U-shaped snout.
-      Also, crocodiles are more aggressive than alligators.")
-  # say
-  - images:
-      left: example_9_left.jpeg
-      right: example_9_right.jpeg
-      top: example_9_top.jpeg
-    is_img_required: False
-    prompt: >
-      Can you give me a recipe for a cheese cake?
-    response: |
-      say("To make a cheese cake, you need the following ingredients:
-      200g biscuits, 100g butter, 500g cream cheese, 200g sugar, 200g sour cream,
-      3 eggs, 1 vanilla pod, 1 lemon, 1 tbsp cornstarch, 1 pinch of salt.
-      For the crust, crush the biscuits and mix them with the melted butter.
-      Press the mixture into the bottom of a springform pan.
-      For the filling, mix the cream cheese, sugar, sour cream, eggs, vanilla,
-      lemon juice, cornstarch, and salt until smooth.
-      Pour the filling over the crust and bake the cake for 1 hour at 160°C.
-      Let the cake cool down and refrigerate it for at least 4 hours before serving.
-      Enjoy!")
     # Reasoning/multi turn/success
   - images:
       left: example_10_left.jpeg
@@ -238,23 +176,59 @@ examples:
     response: |
       pick_object_from_table("umbrella")
       give_to_hand()
-    # Reasoning/multi turn/failure
+      retract()
+  # Reasoning/multi turn/object in gripper
+  - images:
+      left: example_2_left.jpeg
+      right: example_2_right.jpeg
+      top: example_2_top.jpeg
+    is_img_required: False
+    prompt: >
+      Give me the screwdriver.
+    response: |
+      pick_object_from_table("screwdriver")
+      give_to_hand()
+      retract()
+  - images:
+      left: example_2_left.jpeg
+      right: example_2_right.jpeg
+      top: example_2_top.jpeg
+    is_img_required: False
+    prompt: >
+      Take the screwdriver back.
+    response: |
+      take_from_hand()
+      retract()
+  # Reasoning/multi give/object in hand
+  - images:
+      left: example_4_left.jpeg
+      right: example_4_right.jpeg
+      top: example_4_top.jpeg
+    is_img_required: False
+    prompt: >
+      Give me the red cube.
+    response: |
+      pick_object_from_table("red cube")
+      give_to_hand()
+      retract()
+  # put next to
   - images:
       left: example_8_left.jpeg
       right: example_8_right.jpeg
       top: example_8_top.jpeg
-    is_img_required: True
+    is_img_required: False
     prompt: >
-      I have to brush my teeth. What do I need for that?
+      pick up the yellow cup
     response: |
-      say("You need a toothbrush and toothpaste to do that.")
+      pick_object_from_table("yellow cup")
+  # place and go home
   - images:
       left: example_8_left.jpeg
       right: example_8_right.jpeg
       top: example_8_top.jpeg
-    is_img_required: True
+    is_img_required: False
     prompt: >
-      Can you give it to me.
+      pick up the yellow cup
     response: |
-      say("Sorry, I cannot help you with that. There is no toothbrush or toothpaste
-      in the scene.")
+      place_object_on_table_at(0.1,0.1)
+      retract()

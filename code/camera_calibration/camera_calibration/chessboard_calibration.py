@@ -10,9 +10,7 @@ from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
 from rclpy.node import Node
-from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile
 from scipy.spatial.transform import Rotation
-from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
 
 from aidara_common.image_utils import (
     get_img_from_zed,
@@ -109,15 +107,6 @@ class ChessboardCalibration(Node, TfMixin):
             callback_group=self._calib_cb_group,
         )
 
-        qos = QoSProfile(
-            depth=1,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
-            history=HistoryPolicy.KEEP_ALL,
-        )
-        self._static_br = StaticTransformBroadcaster(self, qos=qos)
-
-        self._br = TransformBroadcaster(self)
-
         self._cb_group = ReentrantCallbackGroup()
 
     def _calibrate_camera_cb(
@@ -189,25 +178,18 @@ class ChessboardCalibration(Node, TfMixin):
             Rotation.from_matrix(rotation).as_quat(canonical=False),
         )
 
-        # Broadcast OpenCV to ZED transformation
-        self._static_br.sendTransform(
-            _make_zed_to_opencv_transform(camera_zed_frame),
-        )
+        self.publish_static_transform(_make_zed_to_opencv_transform(camera_zed_frame))
+        self.publish_static_transform(transform_stamped)
 
-        # Broadcast <camera_zed_frame>_opencv to <cam_name>_chessboard transform
-        self._static_br.sendTransform(transform_stamped)  # had to change to static
-
-        cam_link_frame_name = camera_name + "_camera_link"
-
-        tf_cam_chessboard_to_cam_link = self._get_tf(
+        cam_link_frame_name = f"{camera_name}_camera_link"
+        tf_cam_chessboard_to_cam_link = self.get_tf(
             cam_link_frame_name,
             camera_chessboard_frame,
         )
-
         tf_cam_chessboard_to_cam_link.header.frame_id = "chessboard"
         tf_cam_chessboard_to_cam_link.child_frame_id = cam_link_frame_name
 
-        self._static_br.sendTransform(tf_cam_chessboard_to_cam_link)
+        self.publish_static_transform(tf_cam_chessboard_to_cam_link)
 
         self.get_logger().info("Calibrated camera successfully.")
 

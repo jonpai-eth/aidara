@@ -1,6 +1,8 @@
 """Utilities for using and converting geometric objects."""
 
+import collections
 import functools
+from typing import TypeVar, cast
 
 from geometry_msgs.msg import (
     Point,
@@ -11,12 +13,17 @@ from geometry_msgs.msg import (
 )
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
+from tf2_ros import TransformBroadcaster
+from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 
+from aidara_common.service_utils import AsyncServiceCall
 from aidara_msgs.srv import (
     Tf2GetTransform,
     Tf2TransformPoint,
     Tf2TransformPose,
 )
+
+Transformable = TypeVar("Transformable", PointStamped, PoseStamped)
 
 
 class TfMixin:
@@ -28,23 +35,38 @@ class TfMixin:
             msg = "TfMixin can only be used for classes that are Nodes."
             raise TypeError(msg)
 
-        self._tf_client_get_transform = self.create_client(
+        self._get_transform_client = self.create_client(
             Tf2GetTransform,
             "/tf2_server/get_transform",
             callback_group=ReentrantCallbackGroup(),
         )
-        self._tf_client_make_transform = self.create_client(
+        self._transform_point_client = self.create_client(
+            Tf2TransformPoint,
+            "/tf2_server/transform_point",
+            callback_group=ReentrantCallbackGroup(),
+        )
+        self._transform_pose_client = self.create_client(
             Tf2TransformPose,
             "/tf2_server/transform_pose",
             callback_group=ReentrantCallbackGroup(),
         )
+        self._tf_broadcaster = TransformBroadcaster(self)
+        self._static_tf_broadcasters: dict[str, StaticTransformBroadcaster] = (
+            collections.defaultdict(lambda: StaticTransformBroadcaster(self))
+        )
 
-    def _get_tf(self, source_frame: str, target_frame: str) -> TransformStamped:
+    def get_tf(self, source_frame: str, target_frame: str) -> TransformStamped:
         """Get the transform from source to target frame."""
         request = Tf2GetTransform.Request()
         request.target_frame = target_frame
         request.source_frame = source_frame
-        result = self._tf_client_get_transform.call(request)
+
+        result = AsyncServiceCall.create_and_resolve_with_eh(
+            cast(Node, self),
+            self._get_transform_client,
+            request,
+            n_retries=0,
+        )
 
         if not result.success:
             msg = (
@@ -55,21 +77,27 @@ class TfMixin:
 
         return result.tf
 
-    def _do_tf(
-        self,
-        source: PointStamped | PoseStamped,
-        target_frame: str,
-    ) -> TransformStamped:
+    def do_tf(self, source: Transformable, target_frame: str) -> Transformable:
         """Transform a point or pose to the target frame."""
         if isinstance(source, PointStamped):
             request = Tf2TransformPoint.Request()
-        else:
+            client = self._transform_point_client
+        elif isinstance(source, PoseStamped):
             request = Tf2TransformPose.Request()
+            client = self._transform_pose_client
+        else:
+            msg = "Unhandled object type in transform call."
+            raise TypeError(msg)
 
-        request.target_frame = target_frame
         request.source = source
+        request.target_frame = target_frame
 
-        result = self._tf_client_get_transform.call(request)
+        result = AsyncServiceCall.create_and_resolve_with_eh(
+            cast(Node, self),
+            client,
+            request,
+            n_retries=0,
+        )
 
         if not result.success:
             msg = (
@@ -78,11 +106,26 @@ class TfMixin:
             )
             raise RuntimeError(msg)
 
-        return result.tf
+        return result.result
+
+    def publish_transform(
+        self,
+        transform: TransformStamped | list[TransformStamped],
+    ) -> None:
+        """Publish the transform on /tf."""
+        self._tf_broadcaster.sendTransform(transform)
+
+    def publish_static_transform(self, transform: TransformStamped) -> None:
+        """Publish a static transform on /tf_static.
+
+        This works for both publishing multiple different transforms and overwriting a
+        previous static transform defining the same frame.
+        """
+        self._static_tf_broadcasters[transform.child_frame_id].sendTransform(transform)
 
 
 @functools.singledispatch
-def convert(source: object) -> object:
+def convert(source: object, *__args: object) -> object:
     """Convert between geometric types."""
     msg = f"No conversion defined for '{source}'."
     raise NotImplementedError(msg)
@@ -96,6 +139,31 @@ def _(source: TransformStamped) -> PoseStamped:
     res.header = source.header
     res.pose.position = convert(source.transform.translation)
     res.pose.orientation = source.transform.rotation
+
+    return res
+
+
+@convert.register
+def _(source: PoseStamped, child_frame_id: str) -> TransformStamped:
+    """Convert PoseStamped to TransformStamped."""
+    res = TransformStamped()
+
+    res.header = source.header
+    res.child_frame_id = child_frame_id
+    res.transform.translation = convert(source.pose.position)
+    res.transform.rotation = source.pose.orientation
+
+    return res
+
+
+@convert.register
+def _(point: Point) -> Vector3:
+    """Convert Vector3 to Point."""
+    res = Vector3()
+
+    res.x = point.x
+    res.y = point.y
+    res.z = point.z
 
     return res
 

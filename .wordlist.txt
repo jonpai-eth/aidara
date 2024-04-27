@@ -9,6 +9,7 @@ CameraInfo
 cd
 centroid
 ChessboardCalibration
+cli
 coeffs
 colcon
 config
@@ -59,6 +60,7 @@ OpenCV
 param
 PCA
 PIL
+PLR
 PnP
 PoseStamped
 pre

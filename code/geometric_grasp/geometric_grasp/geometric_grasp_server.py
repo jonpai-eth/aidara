@@ -22,11 +22,7 @@ from aidara_common.image_utils import (
     mono8_to_imgmsg,
 )
 from aidara_common.tf_utils import TfMixin
-from aidara_msgs.srv import (
-    GeometricGrasp,
-    Tf2GetTransform,
-    Tf2TransformPose,
-)
+from aidara_msgs.srv import GeometricGrasp
 
 MAX_INTENSITY = 255
 
@@ -47,17 +43,6 @@ class GeometricGraspServer(Node, TfMixin):
             "/geometric_grasp",
             self._grasp_callback,
             callback_group=self._grasping_cb_group,
-        )
-
-        self._tf_client_get_transform = self.create_client(
-            Tf2GetTransform,
-            "/tf2_server/get_transform",
-            callback_group=self._tf_cb_group,
-        )
-        self._tf_client_make_transform = self.create_client(
-            Tf2TransformPose,
-            "/tf2_server/transform_pose",
-            callback_group=self._tf_cb_group,
         )
 
         self._seg_pub = self.create_publisher(Image, "segmentation", 10)
@@ -158,13 +143,13 @@ class GeometricGraspServer(Node, TfMixin):
             np.ndarray of shape (2, N)
         """
         t = self.get_clock().now()
-        chess_to_cam_tf = self._get_tf(
+        chess_to_cam_tf = self.get_tf(
             "chessboard",
             "zed_top_left_camera_optical_frame_opencv",
         )
         self.get_logger().debug(f"Chess to cam tf: {chess_to_cam_tf.transform}")
         self.get_logger().debug(
-            f"Time for _get_tf: {(self.get_clock().now()-t).nanoseconds / S_TO_NS}",
+            f"Time for get_tf: {(self.get_clock().now()-t).nanoseconds / S_TO_NS}",
         )
 
         tf_rot = chess_to_cam_tf.transform.rotation

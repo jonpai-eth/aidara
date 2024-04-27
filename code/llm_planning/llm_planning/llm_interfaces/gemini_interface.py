@@ -1,6 +1,5 @@
 """Interface to Gemini."""
 
-import itertools
 import os
 import pathlib
 from collections.abc import Iterable, Iterator
@@ -8,6 +7,14 @@ from collections.abc import Iterable, Iterator
 import google.generativeai as genai
 import PIL.Image
 from google.api_core.exceptions import ResourceExhausted
+from google.generativeai.types import HarmBlockThreshold as HBThreshold
+from google.generativeai.types import HarmCategory
+from google.generativeai.types.content_types import ContentType
+from google.generativeai.types.generation_types import (
+    BlockedPromptException,
+    GenerateContentResponse,
+    StopCandidateException,
+)
 from sensor_msgs.msg import Image
 
 from .common import (
@@ -46,24 +53,14 @@ def _make_example_interaction(
 def _make_example_history(vision_mode: VisionMode) -> list:
     example_collection, examples_dir = load_examples()
 
-    example_interactions = itertools.chain(
-        *(
-            _make_example_interaction(
-                example,
-                examples_dir,
-                vision_mode,
-            )
-            for example in example_collection["examples"]
-        ),
-    )
-
     return [
-        {"role": "user", "parts": [CONTEXT_EXPLANATION]},
-        {
-            "role": "model",
-            "parts": ["Understood. From now on I will respond with Python code."],
-        },
-        *example_interactions,
+        interaction
+        for example in example_collection["examples"]
+        for interaction in _make_example_interaction(
+            example,
+            examples_dir,
+            vision_mode,
+        )
     ]
 
 
@@ -73,11 +70,43 @@ class GeminiInterface(LLMInterface):
     def __init__(self, examples_vision_mode: VisionMode) -> None:
         """Create Gemini interface."""
         genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-        self._model = genai.GenerativeModel("gemini-1.5-pro-latest")
-        self._generation_config = genai.types.GenerationConfig(candidate_count=1)
+        self._model = genai.GenerativeModel(
+            model_name="gemini-1.5-pro-latest",
+            system_instruction=CONTEXT_EXPLANATION,
+        )
+        self._generation_config = genai.types.GenerationConfig(
+            candidate_count=1,
+            max_output_tokens=500,
+        )
+        self._safety_settings = {
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HBThreshold.BLOCK_ONLY_HIGH,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HBThreshold.BLOCK_ONLY_HIGH,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HBThreshold.BLOCK_ONLY_HIGH,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HBThreshold.BLOCK_ONLY_HIGH,
+        }
 
         self._example_history = _make_example_history(examples_vision_mode)
         self._chat = self._model.start_chat(history=self._example_history)
+
+    def _send_message_checked(self, message: ContentType) -> GenerateContentResponse:
+        try:
+            return self._chat.send_message(
+                message,
+                generation_config=self._generation_config,
+                safety_settings=self._safety_settings,
+            )
+        except ResourceExhausted as e:
+            msg = (
+                "Exceeded the rate limit of Gemini 1.5 (2 requests / min)."
+                " Please wait a bit before sending another request."
+            )
+            raise LLMInterfaceError(msg) from e
+        except BlockedPromptException as e:
+            msg = "The given prompt was flagged as unsafe by Google."
+            raise LLMInterfaceError(msg) from e
+        except StopCandidateException as e:
+            msg = "Gemini stopped generating a response for an unexpected reason."
+            raise LLMInterfaceError(msg) from e
 
     def send_request(self, instruction: str, images: Iterable[Image]) -> str:
         """Query Gemini given an user instruction and current camera images."""
@@ -86,21 +115,13 @@ class GeminiInterface(LLMInterface):
             "parts": [instruction, *(imgmsg_to_pil(img) for img in images)],
         }
 
-        try:
-            response = self._chat.send_message(
-                new_message,
-                generation_config=self._generation_config,
-            )
-        except ResourceExhausted as e:
-            msg = (
-                "Exceeded the rate limit of Gemini 1.5 (2 requests / min)."
-                " Please wait a bit before sending another request."
-            )
-            raise LLMInterfaceError(msg) from e
-
+        response = self._send_message_checked(new_message)
         response.resolve()
 
-        return response.text
+        try:
+            return response.text
+        except ValueError as e:
+            raise LLMInterfaceError from e
 
     def reset_history(self) -> None:
         """Delete the conversation history but keep the example interactions."""

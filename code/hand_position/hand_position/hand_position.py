@@ -79,6 +79,9 @@ class HandTracking(Node):
         )
 
         position_vector = wrist + WRIST_TO_PALM_DISTANCE * direction_vec
+        position_vector = np.array(
+            (position_vector[2], -position_vector[1], position_vector[0]),
+        )
 
         return rnp.msgify(Point, position_vector)
 

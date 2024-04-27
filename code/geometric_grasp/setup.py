@@ -21,7 +21,7 @@ setup(
     entry_points={
         "console_scripts": [
             "geometric_grasp_server = geometric_grasp.geometric_grasp_server:main",
-            "dummy_client = geometric_grasp.dummy_client:main",
+            "debug_cli = geometric_grasp.debug_cli:main",
         ],
     },
 )
