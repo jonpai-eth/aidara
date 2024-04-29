@@ -36,7 +36,6 @@ class GeometricGraspServer(Node, TfMixin):
         TfMixin.__init__(self)
 
         self._grasping_cb_group = ReentrantCallbackGroup()
-        self._tf_cb_group = ReentrantCallbackGroup()
 
         self._srv = self.create_service(
             GeometricGrasp,
