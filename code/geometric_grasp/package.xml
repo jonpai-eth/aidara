@@ -7,8 +7,6 @@
   <maintainer email="fehegg@student.ethz.ch">felix</maintainer>
   <license>MIT</license>
 
-  <depend>sklearn</depend>
-
   <export>
     <build_type>ament_python</build_type>
   </export>

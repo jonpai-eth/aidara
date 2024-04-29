@@ -29,8 +29,7 @@ def get_img_from_zed(
     """
     Get image of current scene from ZED camera.
 
-    This assumes there is a camera with the name "zed" in the network; it listens to the
-    topic /zed/zed_node/left/image_rect_color.
+    Listens to `/<camera_name>/zed_node/rgb/image_rect_color`.
 
     Args:
         node: ROS2 node.
