@@ -97,7 +97,7 @@ class GeminiInterface(LLMInterface):
             )
         except ResourceExhausted as e:
             msg = (
-                "Exceeded the rate limit of Gemini 1.5 (2 requests / min)."
+                "Exceeded the rate limit of Gemini 1.5 (5 requests / min)."
                 " Please wait a bit before sending another request."
             )
             raise LLMInterfaceError(msg) from e
