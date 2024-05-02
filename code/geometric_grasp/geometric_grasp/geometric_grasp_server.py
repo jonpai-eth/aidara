@@ -116,7 +116,7 @@ class GeometricGraspServer(Node, TfMixin):
         masks, _boxes, _phrases, _logits = self._model.predict(image_pil, seg_prompt)
 
         if masks is None or len(masks) == 0:
-            self.get_logger().error("The object could not be detected.")
+            self.get_logger().error(f"'{seg_prompt}' could not be detected.")
             return None
 
         first_mask = masks[0]
@@ -210,7 +210,7 @@ class GeometricGraspServer(Node, TfMixin):
         pca.fit(points.T)
         best_angle = (
             np.arctan2(pca.components_[1, 1], pca.components_[1, 0]) % math.pi
-        ) - (math.pi / 2)  # Rotate gripper 90 degrees around z-axis
+        ) + (math.pi / 2)  # Rotate gripper 90 degrees around z-axis
 
         return x.item(), y.item(), best_angle.item()
 
