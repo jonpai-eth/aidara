@@ -16,7 +16,7 @@ from rclpy.node import Node
 from tf2_ros import TransformBroadcaster
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 
-from aidara_common.service_utils import AsyncServiceCall
+from aidara_common.async_utils import AsyncServiceCall
 from aidara_msgs.srv import (
     Tf2GetTransform,
     Tf2TransformPoint,
@@ -61,12 +61,11 @@ class TfMixin:
         request.target_frame = target_frame
         request.source_frame = source_frame
 
-        result = AsyncServiceCall.create_and_resolve_with_eh(
+        result = AsyncServiceCall.create(
             cast(Node, self),
             self._get_transform_client,
             request,
-            n_retries=0,
-        )
+        ).resolve_with_eh(n_retries=0)
 
         if not result.success:
             msg = (
@@ -92,12 +91,11 @@ class TfMixin:
         request.source = source
         request.target_frame = target_frame
 
-        result = AsyncServiceCall.create_and_resolve_with_eh(
+        result = AsyncServiceCall.create(
             cast(Node, self),
             client,
             request,
-            n_retries=0,
-        )
+        ).resolve_with_eh(n_retries=0)
 
         if not result.success:
             msg = (

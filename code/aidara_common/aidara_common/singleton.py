@@ -8,9 +8,9 @@ T = TypeVar("T")
 class Singleton(type):
     """Singleton metaclass."""
 
-    _instances: ClassVar[dict[type[T], T]] = {}
+    _instances: ClassVar[dict] = {}
 
-    def __call__(cls: type[T], *args: tuple, **kwargs: dict[str, Any]) -> T:
+    def __call__(cls, *args: tuple, **kwargs: dict[str, Any]) -> object:
         """Create new class instance."""
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)

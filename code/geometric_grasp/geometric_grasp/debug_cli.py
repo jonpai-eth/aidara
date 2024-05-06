@@ -6,7 +6,7 @@ from typing import cast
 import rclpy
 from rclpy.node import Node
 
-from aidara_common.service_utils import AsyncServiceCall
+from aidara_common.async_utils import AsyncServiceCall
 from aidara_msgs.srv import GeometricGrasp
 
 
@@ -26,12 +26,11 @@ class DummyClient(Node):
         request = GeometricGrasp.Request()
         request.object_description.data = object_name
 
-        result = AsyncServiceCall.create_and_resolve_with_eh(
+        result = AsyncServiceCall.create(
             self,
             self._client,
             request,
-            n_retries=0,
-        )
+        ).resolve_with_eh(n_retries=0)
         if not result.success:
             self.get_logger().error("The object could not be detected.")
             return

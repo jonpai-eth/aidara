@@ -32,7 +32,7 @@ class GeometricGraspServer(Node, TfMixin):
 
     def __init__(self) -> None:
         """Initialize service, load models and create client for the tf2_server."""
-        Node.__init__(self, "chessboard_calibration")
+        Node.__init__(self, "geometric_grasp_server")
         TfMixin.__init__(self)
 
         self._grasping_cb_group = ReentrantCallbackGroup()

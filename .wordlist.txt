@@ -3,6 +3,7 @@ apache
 ARG
 argparser
 args
+async
 autodistill
 CalibrateCamera
 CameraInfo
