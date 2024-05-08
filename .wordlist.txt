@@ -5,6 +5,7 @@ argparser
 args
 async
 autodistill
+bringup
 CalibrateCamera
 CameraInfo
 cd
@@ -16,6 +17,7 @@ colcon
 config
 cornersubpix
 cuda
+cuRobo
 cv
 cx
 cy
@@ -24,6 +26,7 @@ eef
 effector
 enum
 extrinsics
+franka
 fx
 fy
 GeometricGraspServer
@@ -79,9 +82,12 @@ rviz
 RViz
 seg
 segmap
+sn
 SpeechToText
 srv
 srvs
+Stäubli
+staubli
 str
 TCH
 tf
@@ -94,6 +100,7 @@ traceback
 TransformStamped
 uint
 url
+VisionModes
 whl
 wrt
 www

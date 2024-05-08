@@ -20,13 +20,15 @@ from top_level_actions import (
 )
 from top_level_actions.action_collection import say
 
-_EXEC_TEMPLATE = string.Template("""\
+_EXEC_TEMPLATE = string.Template(
+    """\
 try:
 $source
 except Exception as e:
     say("There was an error while carrying out your request. Please try again.")
     LLMActions().get_logger().error(str(e))
-""")
+""",
+)
 
 
 class LLMPlanner(Node):
@@ -134,6 +136,11 @@ def main(args: list[str] | None = None) -> None:
         type=VisionMode,
         choices=VisionMode,
         default=VisionMode.ALL,
+    )
+    parser.add_argument(
+        "--ros-args",
+        action="store_true",
+        help="Ignored. There for ros2 launch compatibility.",
     )
     cli_args = parser.parse_args()
 

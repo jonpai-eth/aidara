@@ -10,6 +10,8 @@ exclude = ["dependencies/**"]
 
 # treat all python packages as namespace packages
 namespace-packages = [
+    "code/aidara_bringup",
+    "code/aidara_bringup/launch",
     "code/aidara_common",
     "code/camera_calibration",
     "code/geometric_grasp",
@@ -35,6 +37,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [lint.isort]
 known-local-folder = [
+    "aidara_bringup",
     "aidara_common",
     "aidara_msgs",
     "camera_calibration",

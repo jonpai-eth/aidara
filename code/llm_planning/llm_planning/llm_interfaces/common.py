@@ -93,6 +93,12 @@ class VisionMode(enum.Enum):
         """Format the enum variant."""
         return self.value
 
+    @classmethod
+    def get_valid_options(cls) -> list[str]:
+        """Return all valid vision modes."""
+        return [option.value for option in cls.__members__.values()]
+
+
     def get_example_images(self, example: ExampleInteraction) -> Iterable[str]:
         """Return the image paths of the example pertaining to this vision mode."""
         if self is VisionMode.NONE:

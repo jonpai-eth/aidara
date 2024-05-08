@@ -30,7 +30,7 @@ def get_latest_msg_from_topic(
     Returns:
         Raw message.
     """
-    timeout = timeout or Duration(seconds=5)
+    timeout = timeout or Duration(seconds=10)
     msg = None
 
     def update_msg(incoming_msg: Image) -> None:

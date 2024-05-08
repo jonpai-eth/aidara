@@ -99,6 +99,11 @@ def main(args: list[str] | None = None) -> None:
         type=str,
         default="zed",
     )
+    parser.add_argument(
+        "--ros-args",
+        action="store_true",
+        help="Ignored. There for ros2 launch compatibility.",
+    )
     camera_name = parser.parse_args(args).zed_camera_name
 
     rclpy.init(args=args)
