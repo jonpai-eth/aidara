@@ -10,6 +10,7 @@ import numpy.typing as npt
 import PIL.Image
 from cv_bridge import CvBridge
 from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.duration import Duration
 from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo, Image
 
@@ -25,6 +26,7 @@ def get_img_from_zed(
     node: Node,
     callback_group: ReentrantCallbackGroup,
     camera_name: str = "zed",
+    timeout: Duration | None = None,
 ) -> Image:
     """
     Get image of current scene from ZED camera.
@@ -38,11 +40,14 @@ def get_img_from_zed(
     Returns:
         Latest image from ZED camera.
     """
+    timeout = timeout or Duration(seconds=5)
+
     return get_latest_msg_from_topic(
         node,
         f"/{camera_name}/zed_node/rgb/image_rect_color",
         Image,
         callback_group,
+        timeout=timeout,
     )
 
 

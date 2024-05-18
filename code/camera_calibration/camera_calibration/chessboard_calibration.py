@@ -8,6 +8,7 @@ import rclpy
 import ros2_numpy as rnp
 from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
 from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.duration import Duration
 from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
 from rclpy.node import Node
 from scipy.spatial.transform import Rotation
@@ -124,7 +125,12 @@ class ChessboardCalibration(Node, TfMixin):
 
         camera_name = request.camera_name
 
-        img_msg = get_img_from_zed(self, self._cb_group, camera_name)
+        img_msg = get_img_from_zed(
+            self,
+            callback_group=self._cb_group,
+            camera_name=camera_name,
+            timeout=Duration(seconds=30),
+        )
         camera_zed_frame = img_msg.header.frame_id
 
         cv_image_gray = imgmsg_to_grayscale(img_msg)

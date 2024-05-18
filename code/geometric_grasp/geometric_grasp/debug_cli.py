@@ -30,7 +30,7 @@ class DummyClient(Node):
             self,
             self._client,
             request,
-        ).resolve_with_eh(n_retries=0)
+        ).resolve_with_eh(n_retries=3)
         if not result.success:
             self.get_logger().error("The object could not be detected.")
             return

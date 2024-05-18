@@ -65,7 +65,7 @@ class TfMixin:
             cast(Node, self),
             self._get_transform_client,
             request,
-        ).resolve_with_eh(n_retries=0)
+        ).resolve_with_eh(n_retries=3)
 
         if not result.success:
             msg = (
@@ -95,7 +95,7 @@ class TfMixin:
             cast(Node, self),
             client,
             request,
-        ).resolve_with_eh(n_retries=0)
+        ).resolve_with_eh(n_retries=3)
 
         if not result.success:
             msg = (
