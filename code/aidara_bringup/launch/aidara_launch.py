@@ -137,10 +137,6 @@ def generate_launch_description() -> LaunchDescription:
             executable="text_to_speech",
         ),
         Node(
-            package="tf2_service",
-            executable="tf2_service",
-        ),
-        Node(
             package="geometric_grasp",
             executable="geometric_grasp_server",
         ),

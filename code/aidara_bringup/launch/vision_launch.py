@@ -58,6 +58,11 @@ def generate_launch_description() -> LaunchDescription:
         output="screen",
     )
 
+    tf2_service = Node(
+        package="tf2_service",
+        executable="tf2_service",
+    )
+
     launch_cameras = [
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -98,6 +103,7 @@ def generate_launch_description() -> LaunchDescription:
             chessboard_height_arg,
             square_size_arg,
             calibration_node,
+            tf2_service,
             *launch_cameras,
         ],
     )

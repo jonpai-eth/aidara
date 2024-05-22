@@ -33,14 +33,14 @@ def _get_chessboard_corners(
     square_size: float,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Generate chessboard world coordinates."""
-    objp = np.zeros((chessboard_width * chessboard_height, 3), np.float32)
+    objp = np.zeros((chessboard_height * chessboard_width, 3), np.float32)
     objp[:, :2] = (
-        np.mgrid[0:chessboard_width, 0:chessboard_height].T.reshape(-1, 2) * square_size
+        np.mgrid[0:chessboard_height, 0:chessboard_width].T.reshape(-1, 2) * square_size
     )
 
     ret, corners = cv2.findChessboardCorners(
         image_gray,
-        (chessboard_width, chessboard_height),
+        (chessboard_height, chessboard_width),
         None,
     )
 
@@ -86,7 +86,7 @@ def _make_zed_to_opencv_transform(cam_frame_name: str) -> TransformStamped:
     tf_msg.child_frame_id = cam_frame_name + "_opencv"
 
     # Rotate 90 degrees around z-axis
-    rotation_msg = rnp.msgify(Quaternion, np.array([0.0, -0.70710678, 0.70710678, 0.0]))
+    rotation_msg = rnp.msgify(Quaternion, np.array([-0.70710678, 0.0, 0.0, 0.70710678]))
     tf_msg.transform.rotation = rotation_msg
 
     return tf_msg
