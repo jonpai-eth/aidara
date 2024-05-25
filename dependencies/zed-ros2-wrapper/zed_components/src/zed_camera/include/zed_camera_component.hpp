@@ -23,6 +23,7 @@
 #include "visibility_control.hpp"
 
 #include <atomic>
+#include <rerun.hpp>
 
 namespace stereolabs
 {
@@ -506,6 +507,8 @@ private:
   // <---- Messages
 
   // ----> Publishers
+  rerun::RecordingStream *mRerun;
+
   image_transport::CameraPublisher mPubRgb;
   image_transport::CameraPublisher mPubRawRgb;
   image_transport::CameraPublisher mPubLeft;

@@ -17,11 +17,12 @@
 #include <vector>
 #include <limits>
 #include <sys/resource.h>
-
+#include <cv_bridge/cv_bridge.h>
 #include "zed_camera_component.hpp"
 #include "sl_logging.hpp"
-
+#include <opencv2/imgproc.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
+#include <opencv2/core.hpp>
 #include <rcl_interfaces/msg/parameter_descriptor.hpp>
 #include <rclcpp/time.hpp>
 #include <rclcpp/utilities.hpp>
@@ -49,6 +50,55 @@ using namespace std::placeholders;
 
 // Used for simulation data input
 #define ZED_SDK_PORT 30000
+
+cv::Mat slMat2cvMat(sl::Mat& input) {
+    int cv_type = -1;
+    switch (input.getDataType()) {
+        case sl::MAT_TYPE::F32_C1: cv_type = CV_32FC1;
+            break;
+        case sl::MAT_TYPE::F32_C2: cv_type = CV_32FC2;
+            break;
+        case sl::MAT_TYPE::F32_C3: cv_type = CV_32FC3;
+            break;
+        case sl::MAT_TYPE::F32_C4: cv_type = CV_32FC4;
+            break;
+        case sl::MAT_TYPE::U8_C1: cv_type = CV_8UC1;
+            break;
+        case sl::MAT_TYPE::U8_C2: cv_type = CV_8UC2;
+            break;
+        case sl::MAT_TYPE::U8_C3: cv_type = CV_8UC3;
+            break;
+        case sl::MAT_TYPE::U8_C4: cv_type = CV_8UC4;
+            break;
+        default: break;
+    }
+    // Since cv::Mat data requires a uchar* pointer, we get the uchar1 pointer from sl::Mat (getPtr<T>())
+    // cv::Mat and sl::Mat will share a single memory structure
+    return cv::Mat(input.getHeight(), input.getWidth(), cv_type, input.getPtr<sl::uchar1>(sl::MEM::CPU), input.getStepBytes(sl::MEM::CPU));
+}
+
+rerun::Collection<rerun::TensorDimension> tensor_shape(const cv::Mat& img) {
+    return {img.rows, img.cols, img.channels()};
+};
+
+// Adapters so we can borrow an OpenCV image easily into Rerun images without copying:
+template <typename TElement>
+struct rerun::CollectionAdapter<TElement, cv::Mat> {
+    /// Borrow for non-temporary.
+    Collection<TElement> operator()(const cv::Mat& img) {
+        return Collection<TElement>::borrow(
+            reinterpret_cast<TElement*>(img.data),
+            img.total() * img.channels()
+        );
+    }
+
+    // Do a full copy for temporaries (otherwise the data might be deleted when the temporary is destroyed).
+    Collection<TElement> operator()(cv::Mat&& img) {
+        std::vector<TElement> img_vec(img.total() * img.channels());
+        img_vec.assign(img.data, img.data + img.total() * img.channels());
+        return Collection<TElement>::take_ownership(std::move(img_vec));
+    }
+};
 
 namespace stereolabs
 {
@@ -3075,6 +3125,26 @@ void ZedCamera::fillCamInfo(
 
 void ZedCamera::initPublishers()
 {
+  rclcpp::Client<rcl_interfaces::srv::GetParameters>::SharedPtr rerun_parameters_client =
+    this->create_client<rcl_interfaces::srv::GetParameters>("/rerun_manager/get_parameters");
+  if (!rerun_parameters_client->wait_for_service(40s)) {
+    RCLCPP_ERROR(get_logger(), "Failed to wait for rerun parameters");
+    exit(EXIT_FAILURE);
+  }
+
+  auto rerun_params_request = std::make_shared<rcl_interfaces::srv::GetParameters::Request>();
+  rerun_params_request->names = {"recording_id"};
+  auto result = rerun_parameters_client->async_send_request(rerun_params_request);
+  if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result) != rclcpp::FutureReturnCode::SUCCESS) {
+    RCLCPP_ERROR(get_logger(), "Failed to get rerun parameters");
+    exit(EXIT_FAILURE);
+  };
+
+  std::string rr_recording_id = result.get()->values[0].string_value;
+
+  mRerun = new rerun::RecordingStream("aidara", rr_recording_id);
+  mRerun->connect().exit_on_failure();
+
   RCLCPP_INFO(get_logger(), "*** PUBLISHED TOPICS ***");
 
   std::string topicPrefix = get_namespace();
@@ -5234,23 +5304,19 @@ void ZedCamera::threadFunc_zedGrab()
 
     // ----> Retrieve Image/Depth data if someone has subscribed to
     // Retrieve data if there are subscriber to topics
-    if (areVideoDepthSubscribed()) {
-      DEBUG_STREAM_VD("Retrieving video/depth data");
-      retrieveVideoDepth();
+    DEBUG_STREAM_VD("Retrieving video/depth data");
+    retrieveVideoDepth();
 
-      rclcpp::Time pub_ts;
-      publishVideoDepth(pub_ts);
+    rclcpp::Time pub_ts;
+    publishVideoDepth(pub_ts);
 
-      if (!sl_tools::isZED(mCamRealModel) && mVdPublishing && pub_ts != TIMEZERO_ROS) {
-        if (mSensCameraSync || mSvoMode) {
-          publishSensorsData(pub_ts);
-        }
+    if (!sl_tools::isZED(mCamRealModel) && mVdPublishing && pub_ts != TIMEZERO_ROS) {
+      if (mSensCameraSync || mSvoMode) {
+        publishSensorsData(pub_ts);
       }
-
-      mVdPublishing = true;
-    } else {
-      mVdPublishing = false;
     }
+
+    mVdPublishing = true;
     // <---- Retrieve Image/Depth data if someone has subscribed to
 
     // ----> Retrieve the point cloud if someone has subscribed to
@@ -6074,12 +6140,10 @@ void ZedCamera::retrieveVideoDepth()
 
   // ----> Retrieve all required data
   DEBUG_STREAM_VD("Retrieving Video Data");
-  if (mRgbSubnumber + mLeftSubnumber + mStereoSubnumber > 0) {
-    retrieved |= sl::ERROR_CODE::SUCCESS ==
-      mZed.retrieveImage(mMatLeft, sl::VIEW::LEFT, sl::MEM::CPU, mMatResol);
-    mSdkGrabTS = mMatLeft.timestamp;
-    mRgbSubscribed = true;
-  }
+  retrieved |= sl::ERROR_CODE::SUCCESS ==
+    mZed.retrieveImage(mMatLeft, sl::VIEW::LEFT, sl::MEM::CPU, mMatResol);
+  mSdkGrabTS = mMatLeft.timestamp;
+  mRgbSubscribed = true;
   if (mRgbRawSubnumber + mLeftRawSubnumber + mStereoRawSubnumber > 0) {
     retrieved |=
       sl::ERROR_CODE::SUCCESS ==
@@ -6124,13 +6188,11 @@ void ZedCamera::retrieveVideoDepth()
   }
   DEBUG_STREAM_VD("Video Data retrieved");
   DEBUG_STREAM_VD("Retrieving Depth Data");
-  if (mDepthSubnumber > 0 || mDepthInfoSubnumber > 0) {
-    DEBUG_STREAM_VD("Retrieving Depth");
-    retrieved |=
-      sl::ERROR_CODE::SUCCESS ==
-      mZed.retrieveMeasure(mMatDepth, sl::MEASURE::DEPTH, sl::MEM::CPU, mMatResol);
-    mSdkGrabTS = mMatDepth.timestamp;
-  }
+  DEBUG_STREAM_VD("Retrieving Depth");
+  retrieved |=
+    sl::ERROR_CODE::SUCCESS ==
+    mZed.retrieveMeasure(mMatDepth, sl::MEASURE::DEPTH, sl::MEM::CPU, mMatResol);
+  mSdkGrabTS = mMatDepth.timestamp;
   if (mDisparitySubnumber > 0) {
     DEBUG_STREAM_VD("Retrieving Disparity");
     retrieved |=
@@ -6187,6 +6249,7 @@ void ZedCamera::publishVideoDepth(rclcpp::Time & out_pub_ts)
     DEBUG_STREAM_VD("publishVideoDepth: ignoring not update data");
     return;
   }
+  // <---- Check if a grab has been done before publishing the same images
 
   if (mLastTs_grab.data_ns != 0) {
     double period_sec = static_cast<double>(mSdkGrabTS.data_ns - mLastTs_grab.data_ns) / 1e9;
@@ -6199,7 +6262,6 @@ void ZedCamera::publishVideoDepth(rclcpp::Time & out_pub_ts)
                                       << 1. / mVideoDepthPeriodMean_sec->getAvg() << " Hz");
   }
   mLastTs_grab = mSdkGrabTS;
-  // <---- Check if a grab has been done before publishing the same images
 
   rclcpp::Time timeStamp;
   if (mSvoMode || mSimEnabled) {
@@ -6210,16 +6272,46 @@ void ZedCamera::publishVideoDepth(rclcpp::Time & out_pub_ts)
 
   out_pub_ts = timeStamp;
 
+  mRerun->set_time_nanos("ros", out_pub_ts.nanoseconds());
+
+  const std::array<float, 9> img_intrinsics = {
+        static_cast<float>(mRgbCamInfoMsg->k[0]),
+        static_cast<float>(mRgbCamInfoMsg->k[3]),
+        static_cast<float>(mRgbCamInfoMsg->k[6]),
+        static_cast<float>(mRgbCamInfoMsg->k[1]),
+        static_cast<float>(mRgbCamInfoMsg->k[4]),
+        static_cast<float>(mRgbCamInfoMsg->k[7]),
+        static_cast<float>(mRgbCamInfoMsg->k[2]),
+        static_cast<float>(mRgbCamInfoMsg->k[5]),
+        static_cast<float>(mRgbCamInfoMsg->k[8]),
+  };
+  mRerun->log(
+        std::string("world/") + get_namespace() + "/image",
+        rerun::Pinhole(img_intrinsics)
+            .with_resolution(static_cast<int>(mRgbCamInfoMsg->width), static_cast<int>(mRgbCamInfoMsg->height))
+  );
+
+  cv::Mat image_cv = slMat2cvMat(mMatLeft);
+  cv::cvtColor(image_cv, image_cv, cv::COLOR_BGR2RGB);
+  mRerun->log(std::string("world/") + get_namespace() + "/image/rgb", rerun::Image(tensor_shape(image_cv), rerun::TensorBuffer::u8(image_cv)));
+
+  cv::Mat depth_cv = slMat2cvMat(mMatDepth);
+  mRerun->log(
+      std::string("world/") + get_namespace() + "/image/depth",
+      rerun::DepthImage(
+          {depth_cv.rows, depth_cv.cols},
+          rerun::TensorBuffer::u16(depth_cv)
+      )
+  );
+
   // ----> Publish the left=rgb image if someone has subscribed to
   if (mLeftSubnumber > 0) {
     DEBUG_STREAM_VD("mLeftSubnumber: " << mLeftSubnumber);
     publishImageWithInfo(mMatLeft, mPubLeft, mLeftCamInfoMsg, mLeftCamOptFrameId, out_pub_ts);
   }
 
-  if (mRgbSubnumber > 0) {
-    DEBUG_STREAM_VD("mRgbSubnumber: " << mRgbSubnumber);
-    publishImageWithInfo(mMatLeft, mPubRgb, mRgbCamInfoMsg, mDepthOptFrameId, out_pub_ts);
-  }
+  DEBUG_STREAM_VD("mRgbSubnumber: " << mRgbSubnumber);
+  publishImageWithInfo(mMatLeft, mPubRgb, mRgbCamInfoMsg, mDepthOptFrameId, out_pub_ts);
   // <---- Publish the left=rgb image if someone has subscribed to
 
   // ----> Publish the left_raw=rgb_raw image if someone has subscribed to

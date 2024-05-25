@@ -1,0 +1,27 @@
+name: staubli
+controller_name: "staubli_controller"
+home_pose:
+  position:
+    x: 0.15
+    y: 0.0
+    z: 0.47
+  orientation:
+    x: 1.0
+    y: 0.0
+    z: 0.0
+    w: 0.0
+  frame_id: "world"
+joint_names:
+  - "tx2_60_joint1"
+  - "tx2_60_joint2"
+  - "tx2_60_joint3"
+  - "tx2_60_joint4"
+  - "tx2_60_joint5"
+  - "tx2_60_joint6"
+home_joint_positions:
+  - -0.13439
+  - -0.5602507
+  - 1.91549885
+  - 0
+  - 1.78634449
+  - 3.0072023

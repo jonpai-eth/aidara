@@ -4,9 +4,6 @@ llm_planner, vision_launch, hand_position, tf2_service, text_to_speech
 and geometric_grasp.
 """
 
-import uuid
-
-import rerun
 from launch import LaunchContext, LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -15,7 +12,7 @@ from launch.actions import (
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node, SetParameter
+from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 from llm_planning.llm_interfaces import VisionMode
@@ -28,7 +25,6 @@ def generate_launch_description() -> LaunchDescription:
     Launches llm_planner, vision_launch, hand_position,
     tf2_service, text_to_speech, geometric_grasp.
     """
-    rerun.spawn()
     llm = DeclareLaunchArgument(
         "llm",
         default_value="gpt-4",
@@ -116,6 +112,10 @@ def generate_launch_description() -> LaunchDescription:
         chessboard_width_arg,
         chessboard_height_arg,
         square_size_arg,
+        Node(
+            package="rerun_manager",
+            executable="rerun_manager",
+        ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 PathJoinSubstitution(
@@ -149,6 +149,5 @@ def generate_launch_description() -> LaunchDescription:
             ],
         ),
         OpaqueFunction(function=launch_llm_planner),
-        SetParameter(name="/rr_recording_id", value=str(uuid.uuid4())),
     ]
     return LaunchDescription(description)

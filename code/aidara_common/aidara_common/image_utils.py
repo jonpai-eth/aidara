@@ -47,7 +47,7 @@ def get_img_from_zed(
         f"/{camera_name}/zed_node/rgb/image_rect_color",
         Image,
         callback_group,
-        timeout=timeout,
+        timeout,
     )
 
 

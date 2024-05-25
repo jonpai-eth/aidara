@@ -17,6 +17,7 @@ namespace-packages = [
     "code/geometric_grasp",
     "code/hand_position",
     "code/llm_planning",
+    "code/rerun_manager",
     "code/speech_to_text",
     "code/text_to_speech",
     "code/tf2_service",

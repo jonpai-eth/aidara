@@ -127,9 +127,9 @@ class ChessboardCalibration(Node, TfMixin):
 
         img_msg = get_img_from_zed(
             self,
-            callback_group=self._cb_group,
-            camera_name=camera_name,
-            timeout=Duration(seconds=30),
+            self._cb_group,
+            camera_name,
+            Duration(seconds=60),
         )
         camera_zed_frame = img_msg.header.frame_id
 

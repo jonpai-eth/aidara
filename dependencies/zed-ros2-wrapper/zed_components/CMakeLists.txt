@@ -52,10 +52,7 @@ if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)
 endif()
 
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
+set(CMAKE_CXX_STANDARD 17)
 
 # if CMAKE_BUILD_TYPE is not specified, take 'Release' as default
 if(NOT CMAKE_BUILD_TYPE)
@@ -78,6 +75,13 @@ endif()
 
 #############################################
 # Dependencies
+include(FetchContent)
+FetchContent_Declare(rerun_sdk URL
+    https://github.com/rerun-io/rerun/releases/latest/download/rerun_cpp_sdk.zip)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+FetchContent_MakeAvailable(rerun_sdk)
+set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
+
 find_package(ZED 4 REQUIRED)
 
 exec_program(uname ARGS -p OUTPUT_VARIABLE CMAKE_SYSTEM_NAME2)
@@ -88,6 +92,7 @@ endif()
 find_package(CUDA REQUIRED)
 
 set(DEPENDENCIES
+    OpenCV
     rclcpp
     rclcpp_components
     image_transport
@@ -100,6 +105,7 @@ set(DEPENDENCIES
     nav_msgs
     nmea_msgs
     geographic_msgs
+    cv_bridge
     sensor_msgs
     stereo_msgs
     zed_interfaces
@@ -114,7 +120,8 @@ set(DEPENDENCIES
 
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
-
+find_package(cv_bridge REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(zed_interfaces)
 find_package(rclcpp REQUIRED)
@@ -169,6 +176,7 @@ link_directories(${CUDA_LIBRARY_DIRS})
 set(ZED_LIBS
   ${ZED_LIBRARIES}
   ${CUDA_LIBRARIES}
+  rerun_sdk
 )
 
 ###############################################################################

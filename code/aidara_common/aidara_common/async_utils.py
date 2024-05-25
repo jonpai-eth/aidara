@@ -1,7 +1,9 @@
 """Utilities for calling services."""
 
 import dataclasses
+import operator
 from collections.abc import Callable
+from functools import partial
 from typing import Generic, TypeVar
 
 from rclpy.client import Client
@@ -29,9 +31,9 @@ class FutureResolver(Generic[T]):
         future: Future,
         timeout: Duration,
     ) -> T:
-        result: T = None
+        result: T | None = None
 
-        def _get_result(future: Future) -> T:
+        def _get_result(future: Future) -> None:
             nonlocal result
             result = future.result()
 
@@ -92,7 +94,14 @@ class AsyncServiceCall:
     """Utility to call a service with timeout and retries."""
 
     @classmethod
-    def create(cls, node: Node, client: Client, request: object) -> FutureResolver:
+    def create(
+        cls,
+        node: Node,
+        client: Client,
+        request: object,
+        *,
+        has_success_field: bool = True,
+    ) -> FutureResolver:
         """Start new service call."""
         server_name = f"Service '{client.srv_name}'"
 
@@ -103,6 +112,6 @@ class AsyncServiceCall:
         return FutureResolver.create(
             node,
             server_name,
-            lambda: client.call_async(request),
-            lambda response: response.success,
+            partial(client.call_async, request),
+            operator.attrgetter("success") if has_success_field else lambda _: True,
         )

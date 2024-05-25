@@ -1,7 +1,7 @@
 - name: world_chessboard
-  x: 0.41
-  y: -0.12
-  z: 0.006
+  x: 0.985
+  y: -0.47
+  z: 0.00
   qx: 0.0
   qy: 1.0
   qz: 0.0
@@ -9,9 +9,9 @@
   parent: "world"
   child: "chessboard"
 - name: world_table
-  x: 0.5
-  y: 0.5
-  z: 0.0
+  x: 1.015
+  y: -0.5
+  z: -0.006
   qx: 0.0
   qy: 0.0
   qz: 0.7071068
