@@ -8,7 +8,6 @@ import rerun as rr
 import ros2_numpy as rnp
 from geometry_msgs.msg import Point, PoseStamped, Quaternion
 from lang_sam import LangSAM
-from rcl_interfaces.srv import GetParameters
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.constants import S_TO_NS
 from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
@@ -17,26 +16,27 @@ from scipy.spatial.transform import Rotation
 from sensor_msgs.msg import Image
 from sklearn.decomposition import PCA
 
-from aidara_common.async_utils import AsyncServiceCall
 from aidara_common.image_utils import (
     get_img_from_zed,
     get_zed_intrinsics,
     imgmsg_to_pil,
     mono8_to_imgmsg,
 )
+from aidara_common.node_utils import NodeMixin
 from aidara_common.tf_utils import TfMixin
 from aidara_msgs.srv import GeometricGrasp
 
 MAX_INTENSITY = 255
 
 
-class GeometricGraspServer(Node, TfMixin):
+class GeometricGraspServer(Node, TfMixin, NodeMixin):
     """Server to execute table top grasp from segmentation mask."""
 
     def __init__(self) -> None:
         """Initialize service, load models and create client for the tf2_server."""
         Node.__init__(self, "geometric_grasp_server")
         TfMixin.__init__(self)
+        NodeMixin.__init__(self)
 
         self._grasping_cb_group = ReentrantCallbackGroup()
 
@@ -47,36 +47,9 @@ class GeometricGraspServer(Node, TfMixin):
             callback_group=self._grasping_cb_group,
         )
 
-        self._is_rerun_initialized = False
-
         self._seg_pub = self.create_publisher(Image, "segmentation", 10)
 
         self._model = LangSAM()
-
-    def _init_rerun(self) -> bool:
-        rr_recording_id = (
-            AsyncServiceCall.create(  # noqa: PD011
-                self,
-                self.create_client(
-                    GetParameters,
-                    "/rerun_manager/get_parameters",
-                    callback_group=ReentrantCallbackGroup(),
-                ),
-                GetParameters.Request(names=["recording_id"]),
-                has_success_field=False,
-            )
-            .resolve_with_eh()
-            .values[0]
-            .string_value
-        )
-        rr.init(
-            "aidara",
-            recording_id=rr_recording_id,
-            strict=True,
-            default_enabled=True,
-            spawn=True,
-        )
-        return True
 
     def _grasp_callback(
         self,
@@ -86,7 +59,7 @@ class GeometricGraspServer(Node, TfMixin):
         """Issue all function calls to finally get a grasp position."""
         response.success = False
 
-        self._is_rerun_initialized = self._is_rerun_initialized or self._init_rerun()
+        self.init_rerun()
 
         # extract requested class
         object_description = request.object_description.data
@@ -280,17 +253,18 @@ class GeometricGraspServer(Node, TfMixin):
             segmap: NumPy NDArray of shape H, W
         """
         segmap[np.where(segmap == 1)] = 255
-        rr.set_time_nanos("ros", self.get_clock().now().nanoseconds)
+
         rr.log(
             "/",
             rr.AnnotationContext(
                 [rr.AnnotationInfo(id=255, label=description, color=(255, 0, 0))],
             ),
+            static=True,
         )
         rr.log(
             "world/zed_top/image/segmentation",
             rr.SegmentationImage(segmap),
-            strict=True,
+            static=True,
         )
         ros_segmap = mono8_to_imgmsg(segmap)
         self._seg_pub.publish(ros_segmap)

@@ -102,6 +102,10 @@ def generate_launch_description() -> LaunchDescription:
             chessboard_width_arg,
             chessboard_height_arg,
             square_size_arg,
+            Node(
+                package="rerun_manager",
+                executable="rerun_manager",
+            ),
             calibration_node,
             tf2_service,
             *launch_cameras,

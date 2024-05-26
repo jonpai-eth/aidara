@@ -18,7 +18,6 @@ def main(args: list[str] | None = None) -> None:
     rr.init(
         "aidara",
         recording_id=recording_id,
-        strict=True,
         default_enabled=True,
         spawn=True,
     )

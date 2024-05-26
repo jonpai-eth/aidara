@@ -91,7 +91,7 @@ def get_zed_intrinsics(
     # Get CameraInfo message from topic
     cam_info = get_latest_msg_from_topic(
         node,
-        f"/{camera_name}/zed_node/left/camera_info",
+        f"/{camera_name}/zed_node/rgb/camera_info",
         CameraInfo,
         callback_group,
     )

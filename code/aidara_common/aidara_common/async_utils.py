@@ -1,4 +1,4 @@
-"""Utilities for calling services."""
+"""Utilities for dealing with futures."""
 
 import dataclasses
 import operator

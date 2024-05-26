@@ -3143,7 +3143,9 @@ void ZedCamera::initPublishers()
   std::string rr_recording_id = result.get()->values[0].string_value;
 
   mRerun = new rerun::RecordingStream("aidara", rr_recording_id);
-  mRerun->connect().exit_on_failure();
+  mRerun->spawn().exit_on_failure();
+  auto timer_callback = [this]() -> void {this->mRerun->spawn().exit_on_failure();};
+  mRerunTimer = create_wall_timer(20s, timer_callback);
 
   RCLCPP_INFO(get_logger(), "*** PUBLISHED TOPICS ***");
 
@@ -6272,8 +6274,6 @@ void ZedCamera::publishVideoDepth(rclcpp::Time & out_pub_ts)
 
   out_pub_ts = timeStamp;
 
-  mRerun->set_time_nanos("ros", out_pub_ts.nanoseconds());
-
   const std::array<float, 9> img_intrinsics = {
         static_cast<float>(mRgbCamInfoMsg->k[0]),
         static_cast<float>(mRgbCamInfoMsg->k[3]),
@@ -6285,7 +6285,7 @@ void ZedCamera::publishVideoDepth(rclcpp::Time & out_pub_ts)
         static_cast<float>(mRgbCamInfoMsg->k[5]),
         static_cast<float>(mRgbCamInfoMsg->k[8]),
   };
-  mRerun->log(
+  mRerun->log_static(
         std::string("world/") + get_namespace() + "/image",
         rerun::Pinhole(img_intrinsics)
             .with_resolution(static_cast<int>(mRgbCamInfoMsg->width), static_cast<int>(mRgbCamInfoMsg->height))
@@ -6293,10 +6293,10 @@ void ZedCamera::publishVideoDepth(rclcpp::Time & out_pub_ts)
 
   cv::Mat image_cv = slMat2cvMat(mMatLeft);
   cv::cvtColor(image_cv, image_cv, cv::COLOR_BGR2RGB);
-  mRerun->log(std::string("world/") + get_namespace() + "/image/rgb", rerun::Image(tensor_shape(image_cv), rerun::TensorBuffer::u8(image_cv)));
+  mRerun->log_static(std::string("world/") + get_namespace() + "/image/rgb", rerun::Image(tensor_shape(image_cv), rerun::TensorBuffer::u8(image_cv)));
 
   cv::Mat depth_cv = slMat2cvMat(mMatDepth);
-  mRerun->log(
+  mRerun->log_static(
       std::string("world/") + get_namespace() + "/image/depth",
       rerun::DepthImage(
           {depth_cv.rows, depth_cv.cols},

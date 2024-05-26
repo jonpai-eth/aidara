@@ -508,6 +508,7 @@ private:
 
   // ----> Publishers
   rerun::RecordingStream *mRerun;
+  rclcpp::TimerBase::SharedPtr mRerunTimer;
 
   image_transport::CameraPublisher mPubRgb;
   image_transport::CameraPublisher mPubRawRgb;

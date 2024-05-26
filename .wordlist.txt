@@ -53,6 +53,7 @@ msgs
 mtx
 ndarray
 NDArray
+NodeMixin
 noqa
 np
 numpy
@@ -100,6 +101,8 @@ traceback
 TransformStamped
 uint
 url
+utils
+Utils
 VisionModes
 whl
 wrt
