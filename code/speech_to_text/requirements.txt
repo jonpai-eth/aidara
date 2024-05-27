@@ -1,2 +1,4 @@
 sounddevice==0.4.6
 SpeechRecognition==3.10
+openai-whisper==20231117
+soundfile==0.12.1

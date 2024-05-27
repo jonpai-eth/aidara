@@ -8,23 +8,19 @@ and publishes it on a topic.
 import string
 
 import rclpy
-import rerun as rr
 import sounddevice  # noqa: F401
 import speech_recognition as sr
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from std_msgs.msg import String
 
-from aidara_common.node_utils import NodeMixin
 
-
-class SpeechToText(Node, NodeMixin):
+class SpeechToText(Node):
     """ROS 2 Node for speech-2-text conversion using OpenAI Whisper."""
 
     def __init__(self) -> None:
         """Initialize SpeechToText."""
         super().__init__("speech_to_text")
-        NodeMixin.__init__(self)
 
         self._keyword = "alfred"
         self._recognizer = sr.Recognizer()
@@ -44,6 +40,7 @@ class SpeechToText(Node, NodeMixin):
             "/speech_to_text",
             1,
         )
+        self._raw_pub = self.create_publisher(String, "/speech_to_text_raw", 1)
 
     def _transcribe_microphone(self) -> str | None:
         """Transcribe microphone input using OpenAI Whisper."""
@@ -70,7 +67,7 @@ class SpeechToText(Node, NodeMixin):
             self.get_logger().info("speech_to_text was unable to understand a phrase.")
             return None
 
-        rr.log("/user_request", rr.TextDocument(text))
+        self._raw_pub.publish(String(data=text))
 
         self.get_logger().info(text)
         stripped_text = text.strip().lower().translate(self._punctuation_replacement)
@@ -109,7 +106,6 @@ class SpeechToText(Node, NodeMixin):
     def listen(self) -> None:
         """Extract instruction from the microphone and publish it on /speech_to_text."""
         self.get_logger().info("Listening...")
-        self.init_rerun()
         stripped_text = self._transcribe_microphone()
         if not stripped_text:
             return

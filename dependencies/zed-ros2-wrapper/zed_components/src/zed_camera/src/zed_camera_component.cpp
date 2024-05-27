@@ -3145,7 +3145,7 @@ void ZedCamera::initPublishers()
   mRerun = new rerun::RecordingStream("aidara", rr_recording_id);
   mRerun->spawn().exit_on_failure();
   auto timer_callback = [this]() -> void {this->mRerun->spawn().exit_on_failure();};
-  mRerunTimer = create_wall_timer(20s, timer_callback);
+  mRerunTimer = create_wall_timer(5 * 60s, timer_callback);
 
   RCLCPP_INFO(get_logger(), "*** PUBLISHED TOPICS ***");
 

@@ -62,6 +62,6 @@ class NodeMixin:
 
         # make sure we reconnect in case rerun crashes.
         self._rerun_timer = self.create_timer(
-            20,
+            5 * 60,
             init_rerun,
         )
