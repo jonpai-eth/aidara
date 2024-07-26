@@ -1,17 +1,20 @@
 """Collection of top level actions for the LLM Planner."""
 
-import copy
 from typing import cast
 
-from geometry_msgs.msg import PoseStamped, TransformStamped
+from geometry_msgs.msg import PointStamped, PoseStamped
+from rclpy.constants import S_TO_NS
 from rclpy.duration import Duration
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
 
 from .llm_actions_node import LLMActions
 from aidara_common.async_utils import AsyncServiceCall
-from aidara_common.tf_utils import convert
-from aidara_msgs.srv import GeometricGrasp, TargetPose
+from aidara_common.topic_utils import get_latest_msg_from_topic
+from aidara_msgs.srv import (
+    GeometricGrasp,
+    TargetPose,
+)
 
 
 def say(message: str) -> None:
@@ -20,184 +23,155 @@ def say(message: str) -> None:
     LLMActions().user_feedback_pub.publish(msg)
 
 
-def pick_object_from_table(object_description: str) -> None:
-    """Pick an object from the table."""
+def get_grasp_pose(object_description: str) -> PoseStamped | None:
+    """Get the pose of an object on the table."""
     node = LLMActions()
-
-    open_gripper_call = AsyncServiceCall.create(
-        node,
-        node.open_gripper_client,
-        Trigger.Request(),
-    )
-
     geometric_grasp_req = GeometricGrasp.Request()
     geometric_grasp_req.object_description.data = object_description
-    grasp_pose = cast(
-        GeometricGrasp.Response,
-        AsyncServiceCall.create(
-            node,
-            node.geometric_grasp_client,
-            geometric_grasp_req,
-        ).resolve_with_eh(),
-    ).pose
+    try:
+        grasp = cast(
+            GeometricGrasp.Response,
+            AsyncServiceCall.create(
+                node,
+                node.geometric_grasp_client,
+                geometric_grasp_req,
+            ).resolve_with_eh(),
+        )
+    except RuntimeError:
+        return None
 
-    grasp_frame = cast(TransformStamped, convert(grasp_pose, "grasp"))
-    node.publish_static_transform(grasp_frame)
-
-    pre_grasp_pose = PoseStamped()
-    pre_grasp_pose.header.frame_id = "grasp"
-    pre_grasp_pose.pose.position.z = -0.1
-
-    open_gripper_call.resolve_with_eh()
-
-    AsyncServiceCall.create(
-        node,
-        node.move_eef_client,
-        TargetPose.Request(target=pre_grasp_pose),
-    ).resolve_with_eh()
-
-    AsyncServiceCall.create(
-        node,
-        node.move_eef_client,
-        TargetPose.Request(target=grasp_pose),
-    ).resolve_with_eh()
-
-    AsyncServiceCall.create(
-        node,
-        node.close_gripper_client,
-        Trigger.Request(),
-    ).resolve_with_eh()
-
-    AsyncServiceCall.create(
-        node,
-        node.move_eef_client,
-        TargetPose.Request(target=pre_grasp_pose),
-    ).resolve_with_eh()
-
-
-def place_object_on_table_at(x: float, y: float) -> None:
-    """Place on object on the table."""
-    node = LLMActions()
-
-    place_pose = PoseStamped()
-    place_pose.header.frame_id = "table"
-    place_pose.header.stamp = node.get_clock().now().to_msg()
-    place_pose.pose.position.x = x
-    place_pose.pose.position.y = y
-
-    place_frame = cast(TransformStamped, convert(place_pose, "grasp"))
-    node.publish_static_transform(place_frame)
-
-    pre_place_pose = copy.deepcopy(place_pose)
-    pre_place_pose.pose.position.z += 0.1
-
-    AsyncServiceCall.create(
-        node,
-        node.move_eef_client,
-        TargetPose.Request(target=pre_place_pose),
-    ).resolve_with_eh()
-
-    AsyncServiceCall.create(
-        node,
-        node.move_eef_client,
-        TargetPose.Request(target=place_pose),
-    ).resolve_with_eh()
-
-    AsyncServiceCall.create(
-        node,
-        node.open_gripper_client,
-        Trigger.Request(),
-    ).resolve_with_eh()
-
-    AsyncServiceCall.create(
-        node,
-        node.move_eef_client,
-        TargetPose.Request(target=pre_place_pose),
-    ).resolve_with_eh()
-
-
-def take_from_hand() -> None:
-    """Take an object from the user's hand."""
-    node = LLMActions()
-
-    handover_pose = node.get_handover_pose()
-
-    open_gripper_call = AsyncServiceCall.create(
-        node,
-        node.open_gripper_client,
-        Trigger.Request(),
+    return node.do_tf(
+        source=grasp.pose,
+        target_frame="table",
     )
 
-    AsyncServiceCall.create(
-        node,
-        node.move_eef_client,
-        TargetPose.Request(target=handover_pose),
-    ).resolve_with_eh()
 
-    open_gripper_call.resolve_with_eh()
+def get_user_hand_pose() -> PoseStamped | None:
+    """Return the hand pose of the users right hand in table frame."""
+    node: LLMActions = LLMActions()
+    try:
+        hand_position = get_latest_msg_from_topic(
+            node,
+            "/hand_position",
+            PointStamped,
+        )
+    except RuntimeError:
+        return None
 
-    node.sleep(Duration(seconds=4))
+    hand_position = node.do_tf(
+        source=hand_position,
+        target_frame="table",
+    )
 
-    AsyncServiceCall.create(
-        node,
-        node.close_gripper_client,
-        Trigger.Request(),
-    ).resolve_with_eh()
+    res = PoseStamped()
+    res.pose.position = hand_position.point
+    res.header.frame_id = hand_position.header.frame_id
+    res.header.stamp = node.get_clock().now().to_msg()
+    res.pose.orientation.x = 1.0
+    res.pose.orientation.w = 0.0
+
+    return res
 
 
-def give_to_hand() -> None:
-    """Give an object to the user's hand."""
+def go_home() -> None:
+    """Go to home position and neutral joint states."""
     node = LLMActions()
-
-    handover_pose = node.get_handover_pose()
-
-    AsyncServiceCall.create(
-        node,
-        node.move_eef_client,
-        TargetPose.Request(target=handover_pose),
-    ).resolve_with_eh()
-
-    AsyncServiceCall.create(
-        node,
-        node.open_gripper_client,
-        Trigger.Request(),
-    ).resolve_with_eh()
-
-    node.sleep(Duration(seconds=4))
-
-    AsyncServiceCall.create(
-        node,
-        node.close_gripper_client,
-        Trigger.Request(),
-    ).resolve_with_eh()
+    move_gripper_to(node.home_pose)
+    node.reset_joints()
 
 
-def retract() -> None:
-    """Go to the home pose."""
+def move_gripper_to(pose: PoseStamped | list[float]) -> None:
+    """Move the gripper to a specific pose.
+
+    In general this function is used to move the gripper to a specific pose with no
+    particular frame in mind. However if a list is passed as pose, it is assumed to be
+    a position in the table frame.
+    """
     node = LLMActions()
+    if isinstance(pose, list):
+        pose = node.build_table_pose(pose)
 
     AsyncServiceCall.create(
         node,
         node.move_eef_client,
-        TargetPose.Request(target=node.home_pose),
+        TargetPose.Request(target=pose),
     ).resolve_with_eh()
 
 
-def move_gripper_by(x: float, y: float, z: float) -> None:
-    """Move the gripper by some delta position."""
-    # Get PoseStamped object of the end effector.
+def move_gripper_by(dx: float, dy: float, dz: float) -> None:
+    """Move the gripper by a specific amount."""
     node = LLMActions()
 
-    eef_tf = node.get_tf("table", "eef")
+    target_pose = PoseStamped()
+    target_pose.header.stamp = node.get_clock().now().to_msg()
+    target_pose.header.frame_id = "eef"
 
-    eef_tf.transform.translation.x += x
-    eef_tf.transform.translation.y += y
-    eef_tf.transform.translation.z += z
+    target_pose = node.do_tf(source=target_pose, target_frame="table")
 
-    target_pose = cast(PoseStamped, convert(eef_tf))
+    target_pose.pose.position.x += dx
+    target_pose.pose.position.y += dy
+    target_pose.pose.position.z += dz
 
     AsyncServiceCall.create(
         node,
         node.move_eef_client,
         TargetPose.Request(target=target_pose),
     ).resolve_with_eh()
+
+
+def open_gripper() -> None:
+    """Open the gripper."""
+    node = LLMActions()
+    AsyncServiceCall.create(
+        node,
+        node.open_gripper_client,
+        Trigger.Request(),
+    ).resolve_with_eh(timeout=Duration(seconds=5))
+
+
+def close_gripper() -> None:
+    """Close the gripper."""
+    node = LLMActions()
+    AsyncServiceCall.create(
+        node,
+        node.close_gripper_client,
+        Trigger.Request(),
+    ).resolve_with_eh(timeout=Duration(seconds=5))
+
+
+def relax() -> None:
+    """Relax the robot's joints."""
+    node = LLMActions()
+    AsyncServiceCall.create(
+        node,
+        node.relax_client,
+        Trigger.Request(),
+    ).resolve_with_eh(timeout=Duration(seconds=5))
+
+
+def tighten_up() -> None:
+    """Tighten the robot's joints."""
+    node = LLMActions()
+    AsyncServiceCall.create(
+        node,
+        node.tighten_up_client,
+        Trigger.Request(),
+    ).resolve_with_eh(timeout=Duration(seconds=5))
+
+
+def sleep(time_sec: float) -> None:
+    """Sleep for the given duration."""
+    node = LLMActions()
+    duration = Duration(nanoseconds=int(time_sec * S_TO_NS))
+    node.sleep(duration)
+
+
+def shift_pose(pose: PoseStamped, dx: float, dy: float, dz: float) -> PoseStamped:
+    """Return the pose shifted by [dx,dy,dz] in table frame."""
+    node = LLMActions()
+    pose = node.do_tf(source=pose, target_frame="table")
+
+    pose.pose.position.x += float(dx)
+    pose.pose.position.y += float(dy)
+    pose.pose.position.z += float(dz)
+    return pose

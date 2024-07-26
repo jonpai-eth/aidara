@@ -1,11 +1,29 @@
+name: "franka"
+controller_name: "compliant_trajectory_controller"
 home_pose:
   position:
-    x: 0.3
+    x: 0.1
     y: 0.0
-    z: 0.6
+    z: 0.45
   orientation:
     x: 1.0
     y: 0.0
     z: 0.0
     w: 0.0
   frame_id: "world"
+joint_names:
+  - "panda_joint1"
+  - "panda_joint2"
+  - "panda_joint3"
+  - "panda_joint4"
+  - "panda_joint5"
+  - "panda_joint6"
+  - "panda_joint7"
+home_joint_positions:
+- 0.0
+- -1.4829292494810198
+- -0.007596200874389054
+- -2.645541553701781
+- -0.00798451366436166
+- 1.1625339260230965
+- 0.811314956839497

@@ -1,6 +1,7 @@
 """Server to execute table top grasp from segmentation mask."""
 
 import math
+from typing import cast
 
 import numpy as np
 import rclpy
@@ -15,7 +16,11 @@ from rclpy.node import Node
 from scipy.spatial.transform import Rotation
 from sensor_msgs.msg import Image
 from sklearn.decomposition import PCA
+from std_msgs.msg import Float32
+from std_srvs.srv import Trigger
+from termcolor import colored
 
+from aidara_common.async_utils import AsyncServiceCall
 from aidara_common.image_utils import (
     get_img_from_zed,
     get_zed_intrinsics,
@@ -26,6 +31,7 @@ from aidara_common.node_utils import NodeMixin
 from aidara_common.tf_utils import TfMixin
 from aidara_msgs.srv import GeometricGrasp
 
+TABLE_LENGTH_M = 1.3
 MAX_INTENSITY = 255
 
 
@@ -47,7 +53,21 @@ class GeometricGraspServer(Node, TfMixin, NodeMixin):
             callback_group=self._grasping_cb_group,
         )
 
+        self._minigame_score = self.create_service(
+            Trigger,
+            "/get_minigame_score",
+            callback=self._minigame_callback,
+            callback_group=ReentrantCallbackGroup(),
+        )
+
+        self._minigame_score_client = self.create_client(
+            GeometricGrasp,
+            "/geometric_grasp",
+            callback_group=ReentrantCallbackGroup(),
+        )
+
         self._seg_pub = self.create_publisher(Image, "segmentation", 10)
+        self._minigame_score_pub = self.create_publisher(Float32, "minigame_score", 1)
 
         self._model = LangSAM()
 
@@ -114,7 +134,6 @@ class GeometricGraspServer(Node, TfMixin, NodeMixin):
         Returns:
             np.ndarray of shape (H, W)
             or None if desired object could not be detected
-
         """
         image_pil = imgmsg_to_pil(ros_img)
 
@@ -268,6 +287,39 @@ class GeometricGraspServer(Node, TfMixin, NodeMixin):
         )
         ros_segmap = mono8_to_imgmsg(segmap)
         self._seg_pub.publish(ros_segmap)
+
+    def _minigame_callback(
+        self,
+        _request: Trigger.Request,
+        response: Trigger.Response,
+    ) -> Trigger.Response:
+        """Calculate ratio of traveled distance along the table."""
+        grasp_request = GeometricGrasp.Request()
+        grasp_request.object_description.data = "red chip"
+
+        pose = cast(
+            PoseStamped,
+            AsyncServiceCall.create(self, self._minigame_score_client, grasp_request)
+            .resolve_with_eh()
+            .pose,
+        )
+
+        if not pose:
+            self.get_logger().error(
+                colored("Couldn't calculate score: No chip found!", "red"),
+            )
+            response.success = False
+            return response
+
+        pose_wf = self.do_tf(pose, "table")
+
+        y = pose_wf.pose.position.y
+        score = y / TABLE_LENGTH_M * 100
+
+        self._minigame_score_pub.publish(Float32(data=score))
+
+        response.success = True
+        return response
 
 
 def main(args: None = None) -> None:

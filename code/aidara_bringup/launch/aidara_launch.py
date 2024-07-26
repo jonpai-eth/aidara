@@ -1,6 +1,6 @@
 """Launch file for a variety of aidara_packages.
 
-llm_planner, vision_launch, hand_position, tf2_service, text_to_speech
+llm_planner, vision_launch, hand_position, text_to_speech
 and geometric_grasp.
 """
 
@@ -31,6 +31,12 @@ def generate_launch_description() -> LaunchDescription:
         description="The LLM the planner uses.",
         choices=["gemini", "gpt-4"],
     )
+    prompt_version = DeclareLaunchArgument(
+        "prompt_version",
+        default_value="playground",
+        description="The prompt version passed to the llm.",
+        choices=["playground", "minigame"],
+    )
     dry_run = DeclareLaunchArgument(
         "is_dry_run",
         default_value="False",
@@ -60,24 +66,6 @@ def generate_launch_description() -> LaunchDescription:
         default_value="zed",
         description="The name of the ZED camera.",
     )
-    chessboard_width_arg = DeclareLaunchArgument(
-        "chessboard_width",
-        description=(
-            "number of inner corners (one less than the number of squares)"
-            " in the long dimension."
-        ),
-    )
-    chessboard_height_arg = DeclareLaunchArgument(
-        "chessboard_height",
-        description=(
-            "number of inner corners (one less than the number of squares)"
-            " in the short dimension."
-        ),
-    )
-    square_size_arg = DeclareLaunchArgument(
-        "square_size",
-        description="side length of a square in m",
-    )
 
     def launch_llm_planner(ctx: LaunchContext) -> list[Node]:
         return [
@@ -92,6 +80,8 @@ def generate_launch_description() -> LaunchDescription:
                     ),
                     "--llm",
                     LaunchConfiguration("llm"),
+                    "--prompt-version",
+                    LaunchConfiguration("prompt_version"),
                     "--examples-vision-mode",
                     LaunchConfiguration("examples_vision_mode"),
                     "--request-vision-mode",
@@ -104,33 +94,25 @@ def generate_launch_description() -> LaunchDescription:
 
     description = [
         llm,
+        prompt_version,
         dry_run,
         examples_vision_mode,
         request_vision_mode,
         robot,
         hand_tracking_camera,
-        chessboard_width_arg,
-        chessboard_height_arg,
-        square_size_arg,
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 PathJoinSubstitution(
                     [
                         FindPackageShare("aidara_bringup"),
                         "launch",
-                        "vision_launch.py",
+                        "static_transforms_launch.py",
                     ],
                 ),
             ),
-            launch_arguments=[
-                ("chessboard_width", LaunchConfiguration("chessboard_width")),
-                ("chessboard_height", LaunchConfiguration("chessboard_height")),
-                ("square_size", LaunchConfiguration("square_size")),
-            ],
-        ),
-        Node(
-            package="text_to_speech",
-            executable="text_to_speech",
+            launch_arguments={
+                ("robot", LaunchConfiguration("robot")),
+            },
         ),
         Node(
             package="geometric_grasp",

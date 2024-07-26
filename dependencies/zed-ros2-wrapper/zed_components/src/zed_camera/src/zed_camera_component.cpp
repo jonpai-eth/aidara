@@ -7924,7 +7924,7 @@ void ZedCamera::publishPointCloud()
 
 
   if (pcMsg->width != width || pcMsg->height != height) {
-    pcMsg->header.frame_id = mPointCloudFrameId;  // Set the header values of the ROS message
+    pcMsg->header.frame_id = "point_cloud";  // Set the header values of the ROS message
 
     pcMsg->is_bigendian = false;
     pcMsg->is_dense = false;

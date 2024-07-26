@@ -3,6 +3,7 @@
 from typing import TypeVar
 
 import rclpy
+from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.time import Duration, Time
@@ -42,17 +43,20 @@ class Tf2Server(Node):
             Tf2GetTransform,
             "~/get_transform",
             self._get_transform_cb,
+            callback_group=ReentrantCallbackGroup(),
         )
 
         self._transform_pose_srv = self.create_service(
             Tf2TransformPose,
             "~/transform_pose",
             self._do_transform_cb,
+            callback_group=ReentrantCallbackGroup(),
         )
         self._transform_point_srv = self.create_service(
             Tf2TransformPoint,
             "~/transform_point",
             self._do_transform_cb,
+            callback_group=ReentrantCallbackGroup(),
         )
 
     def _get_transform_cb(
@@ -72,7 +76,7 @@ class Tf2Server(Node):
                     target_frame,
                     source_frame,
                     Time(),
-                    Duration(seconds=1),
+                    Duration(seconds=3),
                 )
             except TransformException:
                 continue
@@ -93,15 +97,18 @@ class Tf2Server(Node):
 
         target_frame = request.target_frame
         source = request.source
+        source.header.stamp = self.get_clock().now().to_msg()
 
         for _ in range(3):
             try:
                 res = self._tf_buffer.transform(
                     source,
                     target_frame,
-                    timeout=Duration(seconds=1),
+                    timeout=Duration(seconds=3),
                 )
-            except TransformException:
+            except TransformException as e:
+                msg = f"Error in do_transform_cb: {e}"
+                self.get_logger().error(msg)
                 continue
 
             response.result = res

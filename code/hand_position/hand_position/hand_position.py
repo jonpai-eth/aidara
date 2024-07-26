@@ -8,10 +8,12 @@ import rclpy
 import ros2_numpy as rnp
 from geometry_msgs.msg import Point, PointStamped
 from rclpy.node import Node
+from termcolor import colored
 from zed_interfaces.msg import Object, ObjectsStamped
 
 WRIST_TO_PALM_DISTANCE = 0.08
 EXPECTED_KEYPOINTS_BODY_FORMAT = 2  # 38 keypoints
+MAGIC_BODYTRK_ROTATION = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
 
 
 class HandTracking(Node):
@@ -57,7 +59,10 @@ class HandTracking(Node):
 
             return
 
-        self.get_logger().warn("No human in frame. Could not calculate hand position.")
+        self.get_logger().warning(
+            colored("No human in frame. Could not calculate hand position.", "yellow"),
+            throttle_duration_sec=2,
+        )
 
     def _get_hand_coordinates(self, obj: Object) -> tuple[npt.NDArray, npt.NDArray]:
         keypoints = obj.skeleton_3d.keypoints
@@ -79,9 +84,9 @@ class HandTracking(Node):
         )
 
         position_vector = wrist + WRIST_TO_PALM_DISTANCE * direction_vec
-        position_vector = np.array(
-            (position_vector[2], -position_vector[1], position_vector[0]),
-        )
+
+        # Only works like this, sorry...
+        position_vector = MAGIC_BODYTRK_ROTATION @ position_vector
 
         return rnp.msgify(Point, position_vector)
 

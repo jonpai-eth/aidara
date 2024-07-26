@@ -12,6 +12,7 @@ from rclpy.duration import Duration
 from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
 from rclpy.node import Node
 from scipy.spatial.transform import Rotation
+from termcolor import colored
 
 from aidara_common.image_utils import (
     get_img_from_zed,
@@ -149,10 +150,11 @@ class ChessboardCalibration(Node, TfMixin):
                 request.square_size,
             )
         except ChessBoardCornersNotFoundError:
-            msg = (
+            msg = colored(
                 "Chessboard corners not found.\n"
                 "Make sure chessboard is visible to camera and chessboard "
-                "parameters are correct. Error:"
+                "parameters are correct. Error:",
+                "red",
             )
             # Want to use ROS logger which does not provide exception logging.
             # Log the traceback manually instead.
@@ -197,7 +199,9 @@ class ChessboardCalibration(Node, TfMixin):
 
         self.publish_static_transform(tf_cam_chessboard_to_cam_link)
 
-        self.get_logger().info("Calibrated camera successfully.")
+        self.get_logger().info(
+            colored(f"Calibrated {camera_name} successfully.", "green"),
+        )
 
         response.success = True
         return response

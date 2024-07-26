@@ -36,5 +36,9 @@ def generate_launch_description() -> LaunchDescription:
                 package="speech_to_text",
                 executable="speech_to_text",
             ),
+            Node(
+            package="text_to_speech",
+            executable="text_to_speech",
+        ),
         ],
     )

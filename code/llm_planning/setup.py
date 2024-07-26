@@ -23,7 +23,12 @@ setup(
         (str(share_dir / package_name), ["package.xml"]),
         (
             str(share_dir / package_name / "example_prompts"),
-            [str(example_prompts_dir / "examples.yaml")],
+            [str(example_prompts_dir / "minigame_prompts.yaml")],
+        ),
+        (str(share_dir / package_name), ["package.xml"]),
+        (
+            str(share_dir / package_name / "example_prompts"),
+            [str(example_prompts_dir / "playground_prompts.yaml")],
         ),
         (
             str(share_dir / package_name / "example_prompts" / "images"),

@@ -35,3 +35,8 @@ class LLMInterface(abc.ABC):
     def reset_history(self) -> None:
         """Delete the conversation history but keep the example interactions."""
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def append_error(self, error: str) -> None:
+        """Appends any returned error by exec onto the chat history."""
+        raise NotImplementedError

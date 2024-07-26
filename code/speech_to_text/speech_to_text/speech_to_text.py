@@ -28,7 +28,7 @@ class SpeechToText(Node):
         self._min_energy_threshold = 800
         self._max_energy_threshold = 3000
         self._recognizer.energy_threshold = 800
-        self._recognizer.dynamic_energy_threshold = False
+        self._recognizer.dynamic_energy_threshold = True
 
         self._counter = 0
         self._max_counter = 5
@@ -107,6 +107,9 @@ class SpeechToText(Node):
         """Extract instruction from the microphone and publish it on /speech_to_text."""
         self.get_logger().info("Listening...")
         stripped_text = self._transcribe_microphone()
+
+        if self._recognizer.energy_threshold < self._min_energy_threshold:
+            self._recognizer.energy_threshold = 800
         if not stripped_text:
             return
 

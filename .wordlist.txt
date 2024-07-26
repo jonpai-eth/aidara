@@ -22,6 +22,8 @@ cv
 cx
 cy
 dino
+dx
+dy
 eef
 effector
 enum

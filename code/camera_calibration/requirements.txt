@@ -1,3 +1,4 @@
 opencv-python
 numpy
 ros2-numpy
+termcolor

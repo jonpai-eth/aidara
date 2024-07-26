@@ -15,7 +15,7 @@ def get_latest_msg_from_topic(
     node: Node,
     topic: str,
     msg_type: type[AnyMessage],
-    callback_group: ReentrantCallbackGroup,
+    cb_group: ReentrantCallbackGroup | None = None,
     timeout: Duration | None = None,
 ) -> AnyMessage:
     """
@@ -30,7 +30,8 @@ def get_latest_msg_from_topic(
     Returns:
         Raw message.
     """
-    timeout = timeout or Duration(seconds=10)
+    cb_group = cb_group or ReentrantCallbackGroup()
+    timeout = timeout or Duration(seconds=20)
     msg = None
 
     def update_msg(incoming_msg: Image) -> None:
@@ -43,7 +44,7 @@ def get_latest_msg_from_topic(
         topic,
         update_msg,
         qos_profile=1,
-        callback_group=callback_group,
+        callback_group=cb_group,
     )
 
     node.get_logger().info(f"Waiting for message on '{topic}'.")

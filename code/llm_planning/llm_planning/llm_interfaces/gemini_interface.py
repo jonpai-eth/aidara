@@ -3,12 +3,15 @@
 import os
 import pathlib
 from collections.abc import Iterable, Iterator
+from typing import cast
 
 import google.generativeai as genai
 import PIL.Image
+import yaml
+from ament_index_python import get_package_share_directory
 from google.api_core.exceptions import ResourceExhausted
 from google.generativeai.types import HarmBlockThreshold as HBThreshold
-from google.generativeai.types import HarmCategory
+from google.generativeai.types import HarmCategory, content_types
 from google.generativeai.types.content_types import ContentType
 from google.generativeai.types.generation_types import (
     BlockedPromptException,
@@ -18,7 +21,6 @@ from google.generativeai.types.generation_types import (
 from sensor_msgs.msg import Image
 
 from .common import (
-    CONTEXT_EXPLANATION,
     ExampleInteraction,
     VisionMode,
     load_examples,
@@ -50,8 +52,8 @@ def _make_example_interaction(
     }
 
 
-def _make_example_history(vision_mode: VisionMode) -> list:
-    example_collection, examples_dir = load_examples()
+def _make_example_history(vision_mode: VisionMode, prompt_version: str) -> list:
+    example_collection, examples_dir = load_examples(prompt_version)
 
     return [
         interaction
@@ -67,16 +69,16 @@ def _make_example_history(vision_mode: VisionMode) -> list:
 class GeminiInterface(LLMInterface):
     """Interface to Gemini."""
 
-    def __init__(self, examples_vision_mode: VisionMode) -> None:
+    def __init__(self, examples_vision_mode: VisionMode, prompt_version: str) -> None:
         """Create Gemini interface."""
         genai.configure(api_key=os.environ["GEMINI_API_KEY"])
         self._model = genai.GenerativeModel(
             model_name="gemini-1.5-pro-latest",
-            system_instruction=CONTEXT_EXPLANATION,
+            system_instruction=self._get_context_explanation(prompt_version),
         )
         self._generation_config = genai.types.GenerationConfig(
             candidate_count=1,
-            max_output_tokens=500,
+            max_output_tokens=1000,
         )
         self._safety_settings = {
             HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HBThreshold.BLOCK_ONLY_HIGH,
@@ -87,6 +89,12 @@ class GeminiInterface(LLMInterface):
 
         self._example_history = _make_example_history(examples_vision_mode)
         self._chat = self._model.start_chat(history=self._example_history)
+
+    def _get_context_explanation(self, prompt_version: str) -> str:
+        share_dir = get_package_share_directory("llm_planning")
+        examples_dir = pathlib.Path(share_dir) / "example_prompts"
+        with (examples_dir / f"{prompt_version}_prompts.yaml").open() as stream:
+            return yaml.safe_load(stream)["prompt"]
 
     def _send_message_checked(self, message: ContentType) -> GenerateContentResponse:
         try:
@@ -117,7 +125,6 @@ class GeminiInterface(LLMInterface):
 
         response = self._send_message_checked(new_message)
         response.resolve()
-
         try:
             return response.text
         except ValueError as e:
@@ -126,3 +133,23 @@ class GeminiInterface(LLMInterface):
     def reset_history(self) -> None:
         """Delete the conversation history but keep the example interactions."""
         self._chat = self._model.start_chat(history=self._example_history)
+
+    def append_error(self, error: str) -> None:
+        """Add a retrieved error to the chat history of Gemini."""
+        content_list = [
+            {
+                "role": "user",
+                "parts": [
+                    f"During the last task the following error was raised: {error}",
+                ],
+            },
+            {
+                "role": "model",
+                "parts": ["Understood."],
+            },
+        ]
+        self._chat.history.extend(
+            content_types.to_contents(
+                cast(Iterable[content_types.StrictContentType], content_list),
+            ),
+        )

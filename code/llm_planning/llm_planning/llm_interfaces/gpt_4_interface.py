@@ -12,7 +12,6 @@ from openai.types.chat.chat_completion_message_param import (
 from sensor_msgs.msg import Image
 
 from .common import (
-    CONTEXT_EXPLANATION,
     ExampleInteraction,
     VisionMode,
     load_examples,
@@ -77,8 +76,19 @@ def _make_example_interaction(
     }
 
 
-def _make_example_messages(vision_mode: VisionMode) -> list[ChatCompletionMessageParam]:
-    example_collection, examples_dir = load_examples()
+def _make_example_messages(
+    vision_mode: VisionMode,
+    prompt_version: str,
+) -> list[ChatCompletionMessageParam]:
+    example_collection, examples_dir = load_examples(prompt_version)
+
+    if not example_collection["examples"]:
+        return [
+            {
+                "role": "system",
+                "content": example_collection["prompt"],
+            },
+        ]
 
     example_interactions = cast(
         Iterable[ChatCompletionMessageParam],
@@ -93,7 +103,7 @@ def _make_example_messages(vision_mode: VisionMode) -> list[ChatCompletionMessag
     return [
         {
             "role": "system",
-            "content": CONTEXT_EXPLANATION,
+            "content": example_collection["prompt"],
         },
         *example_interactions,
     ]
@@ -101,14 +111,14 @@ def _make_example_messages(vision_mode: VisionMode) -> list[ChatCompletionMessag
 
 def _compose_prompt(messages: list[ChatCompletionMessageParam]) -> dict:
     return {
-        "model": "gpt-4-vision-preview",
-        "max_tokens": 500,
+        "model": "gpt-4o",
+        "max_tokens": 1000,
         "messages": messages,
     }
 
 
-def _make_base_prompt(vision_mode: VisionMode) -> dict:
-    example_messages = _make_example_messages(vision_mode)
+def _make_base_prompt(vision_mode: VisionMode, prompt_version: str) -> dict:
+    example_messages = _make_example_messages(vision_mode, prompt_version)
 
     return _compose_prompt(example_messages)
 
@@ -116,11 +126,11 @@ def _make_base_prompt(vision_mode: VisionMode) -> dict:
 class GPT4PInterface(LLMInterface):
     """Interface to GPT-4."""
 
-    def __init__(self, examples_vision_mode: VisionMode) -> None:
+    def __init__(self, examples_vision_mode: VisionMode, prompt_version: str) -> None:
         """Create GPT-4 interface."""
         self._client = OpenAI()
 
-        self._base_prompt = _make_base_prompt(examples_vision_mode)
+        self._base_prompt = _make_base_prompt(examples_vision_mode, prompt_version)
         # shallow dict copy is insufficient but avoid copying the messages themselves
         self._prompt = _compose_prompt(self._base_prompt["messages"].copy())
 
@@ -130,9 +140,7 @@ class GPT4PInterface(LLMInterface):
             instruction,
             (imgmsg_to_base64(img) for img in images),
         )
-
         self._prompt["messages"].append({"role": "user", "content": new_message})
-
         response: Choice = self._client.chat.completions.create(**self._prompt).choices[
             0
         ]
@@ -155,3 +163,18 @@ class GPT4PInterface(LLMInterface):
     def reset_history(self) -> None:
         """Delete the conversation history but keep the example interactions."""
         self._prompt = _compose_prompt(self._base_prompt["messages"].copy())
+
+    def append_error(self, error: str) -> None:
+        """Add a retrieved error to the chat history of Gemini."""
+        messages = [
+            {
+                "role": "system",
+                "content": "During the last task the following error was raised: "
+                f"{error}",
+            },
+            {
+                "role": "assistant",
+                "content": "Understood.",
+            },
+        ]
+        self._prompt["messages"].extend(messages)
