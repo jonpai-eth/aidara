@@ -1,0 +1,10 @@
+robot_name: "staubli"
+action_server_topic: "/staubli_controller/follow_joint_trajectory"
+robot_yml: "tx2_60_hq.yml"
+world_yml: "staubli_collision_table.yml"
+dof: 6
+projection_params:
+  sphere_radius: 0.590
+  projected_radius: 0.80
+  center_height: 0.375
+  workspace_radius: 2.0

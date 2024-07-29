@@ -15,7 +15,6 @@ find_package(std_msgs)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CalibrateCamera.srv"
   "srv/GeometricGrasp.srv"
-  "srv/SetGripperState.srv"
   "srv/TargetPose.srv"
   "srv/Tf2GetTransform.srv"
   "srv/Tf2TransformPoint.srv"

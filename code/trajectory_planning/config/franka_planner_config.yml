@@ -1,0 +1,10 @@
+robot_name: "franka"
+action_server_topic: "/compliant_trajectory_controller/follow_joint_trajectory"
+robot_yml: "franka_custom.yml"
+world_yml: "franka_collision_table.yml"
+dof: 7
+projection_params:
+  sphere_radius: 0.75
+  projected_radius: 0.75
+  center_height: 0.333
+  workspace_radius: 1.8

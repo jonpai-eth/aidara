@@ -61,7 +61,7 @@ class SpeechToText(Node):
                 audio_listened,
                 model="large-v3",
                 language="english",
-                initial_prompt=self._keyword,
+                initial_prompt=self._keyword*2,
             )
         except sr.UnknownValueError:
             self.get_logger().info("speech_to_text was unable to understand a phrase.")

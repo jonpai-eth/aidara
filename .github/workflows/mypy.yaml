@@ -18,9 +18,11 @@ jobs:
             "code/llm_planning",
             "code/rerun_manager",
             "code/speech_to_text",
+            "code/staubli_controller",
             "code/text_to_speech",
             "code/tf2_service",
             "code/top_level_actions",
+            "code/trajectory_planning",
           ]
     steps:
       - uses: actions/checkout@v2

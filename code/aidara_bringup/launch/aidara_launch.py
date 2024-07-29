@@ -15,6 +15,7 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+from aidara_common.types import RobotName
 from llm_planning.llm_interfaces import VisionMode
 
 
@@ -53,18 +54,18 @@ def generate_launch_description() -> LaunchDescription:
         "request_vision_mode",
         default_value=str(VisionMode.TOP),
         choices=VisionMode.get_valid_options(),
-        description="The vision mode for examples.",
+        description="Images are sent to the LLMs.",
     )
     robot = DeclareLaunchArgument(
         "robot",
-        default_value="franka",
-        choices=["franka", "staubli"],
-        description="The vision mode for examples.",
+        default_value=RobotName.FRANKA,
+        choices=RobotName.get_valid_options(),
+        description="The name of the used robot.",
     )
     hand_tracking_camera = DeclareLaunchArgument(
         "hand_tracking_camera_name",
         default_value="zed",
-        description="The name of the ZED camera.",
+        description="The name of the ZED camera used for hand tracking.",
     )
 
     def launch_llm_planner(ctx: LaunchContext) -> list[Node]:
@@ -100,6 +101,20 @@ def generate_launch_description() -> LaunchDescription:
         request_vision_mode,
         robot,
         hand_tracking_camera,
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare("aidara_bringup"),
+                        "launch",
+                        "static_transforms_launch.py",
+                    ],
+                ),
+            ),
+            launch_arguments={
+                ("robot", LaunchConfiguration("robot")),
+            },
+        ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 PathJoinSubstitution(

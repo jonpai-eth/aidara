@@ -19,15 +19,17 @@ namespace-packages = [
     "code/llm_planning",
     "code/rerun_manager",
     "code/speech_to_text",
+    "code/staubli_controller",
     "code/text_to_speech",
     "code/tf2_service",
-    "code/top_level_actions"
+    "code/top_level_actions",
+    "code/trajectory_planning"
 ]
 
 [lint]
 # Enable all rules.
 select = ["ALL"]
-ignore = ["ANN101", "ANN102", "D203", "D212", "D417"]
+ignore = ["ANN101", "ANN102", "D203", "D212", "D417", "S602"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -46,9 +48,11 @@ known-local-folder = [
     "hand_position",
     "llm_planning",
     "speech_to_text",
+    "staubli_controller",
     "text_to_speech",
     "tf2_service",
-    "top_level_actions"
+    "top_level_actions",
+    "trajectory_planning"
 ]
 
 [lint.mccabe]

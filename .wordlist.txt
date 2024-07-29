@@ -29,6 +29,7 @@ effector
 enum
 extrinsics
 franka
+Franka
 fx
 fy
 GeometricGraspServer
@@ -37,6 +38,7 @@ grayscale
 http
 https
 img
+IK
 intrinsics
 jpg
 keypoints
