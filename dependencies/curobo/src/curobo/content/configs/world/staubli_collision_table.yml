@@ -1,0 +1,26 @@
+##
+## Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+##
+## NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+## property and proprietary rights in and to this material, related
+## documentation and any modifications thereto. Any use, reproduction,
+## disclosure or distribution of this material and related documentation
+## without an express license agreement from NVIDIA CORPORATION or
+## its affiliates is strictly prohibited.
+##
+cuboid:
+  table:
+    dims: [5.0, 5.0, 0.2] # x, y, z
+    pose: [0.0, 0.0, -0.106, 1, 0, 0, 0.0] # x, y, z, qx, qy, qz, qw
+  
+  right_pillar:
+    dims: [0.05, 0.05, 1.4] # x, y, z
+    pose: [0.09, 0.52, 0.7, 1, 0, 0, 0.0] 
+  
+  left_pillar:
+    dims: [0.05, 0.05, 1.4] # x, y, z
+    pose: [0.09, -0.52, 0.7, 1, 0, 0, 0.0]
+  
+  cable_box:
+    dims: [0.1, 0.3, 0.15]
+    pose: [-0.25, 0.0, 0.075, 1, 0, 0, 0.0] 

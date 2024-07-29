@@ -1,0 +1,121 @@
+<?xml version="1.0" ?>
+<robot name="tx2_60">
+  <link name="base_link">
+    <visual>
+    <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://tx2_60_description/mesh/BASE_simplified.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <link name="tx2_60_link1">
+    <visual>
+    <origin rpy="0.0 0 0" xyz="0 0 0.022"/>
+      <geometry>
+        <mesh filename="package://tx2_60_description/mesh/J1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <joint name="tx2_60_joint1" type="revolute">
+    <origin rpy="0 0 0" xyz="0 0 0.188"/>
+    <parent link="base_link"/>
+    <child link="tx2_60_link1"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="87" lower="-3.1416" upper="3.1416" velocity="435" />
+  </joint>
+  
+  <link name="tx2_60_link2">
+    <visual>
+    <origin rpy="1.5708 0 0" xyz="0 0 -0.028"/>
+      <geometry>
+        <mesh filename="package://tx2_60_description/mesh/J2_simplified.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <joint name="tx2_60_joint2" type="revolute">
+    <origin rpy="-1.5708 0 0" xyz="0 0.145 0.187"/>
+    <parent link="tx2_60_link1"/>
+    <child link="tx2_60_link2"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="87" lower="-2.22529" upper="2.22529" velocity="410"/>
+  </joint>
+  
+  <link name="tx2_60_link3">
+    <visual>
+    <origin rpy="-1.5708 0 0" xyz="0 0 0.020"/>
+      <geometry>
+        <mesh filename="package://tx2_60_description/mesh/J3.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <joint name="tx2_60_joint3" type="revolute">
+    <origin rpy="3.1416 0 0" xyz="0 -0.29 0"/>
+    <parent link="tx2_60_link2"/>
+    <child link="tx2_60_link3"/>
+    <axis xyz="0 0 -1"/>
+    <limit effort="87" lower="-2.48709" upper="2.48709" velocity="540"/>
+  </joint>
+  
+  <link name="tx2_60_link4">
+    <visual>
+    <origin rpy="0.0 0 0" xyz="0 0 -0.038"/>
+      <geometry>
+        <mesh filename="package://tx2_60_description/mesh/J4_simplified.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <joint name="tx2_60_joint4" type="revolute">
+    <origin rpy="-1.5708 0 0" xyz="0 0.1255 0.125"/>
+    <parent link="tx2_60_link3"/>
+    <child link="tx2_60_link4"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="87" lower="-4.712389" upper="4.712389" velocity="995"/>
+  </joint>
+  
+  <link name="tx2_60_link5">
+    <visual>
+    <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://tx2_60_description/mesh/J5.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <joint name="tx2_60_joint5" type="revolute">
+    <origin rpy="0 0 0" xyz="0 0 0.1845"/>
+    <parent link="tx2_60_link4"/>
+    <child link="tx2_60_link5"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="87" lower="-1.74533" upper="1.91986" velocity="1065"/>
+  </joint>
+  
+  <link name="tx2_60_link6">
+    <visual>
+    <origin rpy="0.0 0 0" xyz="0 0 -0.07"/>
+      <geometry>
+        <mesh filename="package://tx2_60_description/mesh/J6.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <joint name="tx2_60_joint6" type="revolute">
+    <origin rpy="0 0 0" xyz="0 0 0.070"/>
+    <parent link="tx2_60_link5"/>
+    <child link="tx2_60_link6"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="87" lower="-4.712389" upper="4.712389" velocity="1445"/>
+  </joint>
+  
+  <link name="ee_link"/>
+  
+  <joint name="ee_fixed_joint" type="fixed">
+    <parent link="tx2_60_link6"/>
+    <child link="ee_link"/>
+    <origin rpy="0 0.0 0" xyz="0.0 0.0 0.147"/>
+  </joint>
+</robot>

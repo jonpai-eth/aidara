@@ -1,0 +1,19 @@
+cuboid:
+  table:
+    dims: [5.0, 5.0, 0.2] # x, y, z
+    pose: [0.0, 0.0, -0.1, 1.0, 0.0, 0.0, 0.0] # x, y, z, qx, qy, qz, qw
+  foot_right:
+    dims: [0.04, 0.32, 0.06] # x, y, z
+    pose: [-0.17, 0.41, 0.03, 1.0, 0.0, 0.0, 0.0] # x, y, z, qx, qy, qz, qw
+  foot_left:
+    dims: [0.04, 0.32, 0.06] # x, y, z
+    pose: [-0.17, -0.41, 0.03, 1.0, 0.0, 0.0, 0.0] # x, y, z, qx, qy, qz, qw
+  pillar_right:
+    dims: [0.06, 0.06, 2.5] # x, y, z
+    pose: [-0.2, 0.41, 0.0, 1.0, 0.0, 0.0, 0.0] # x, y, z, qx, qy, qz, qw
+  pillar_left:
+    dims: [0.06, 0.06, 2.5] # x, y, z
+    pose: [-0.2, 0.41, 0.0, 1.0, 0.0, 0.0, 0.0] # x, y, z, qx, qy, qz, qw
+  roof:
+    dims: [5.0, 5.0, 0.2] # x, y, z
+    pose: [0.0, 0.0, 1.25, 1.0, 0.0, 0.0, 0.0] # x, y, z, qx, qy, qz, qw

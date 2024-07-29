@@ -1,0 +1,120 @@
+##
+## Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+##
+## NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+## property and proprietary rights in and to this material, related
+## documentation and any modifications thereto. Any use, reproduction,
+## disclosure or distribution of this material and related documentation
+## without an express license agreement from NVIDIA CORPORATION or
+## its affiliates is strictly prohibited.
+##
+
+robot_cfg:
+    kinematics:
+        usd_path: "robot/tx2_60_description/tx2_60.usd"
+        usd_robot_root: "/robot"
+        isaac_usd_path: ""
+        usd_flip_joints: {}
+        usd_flip_joint_limits: []
+
+        urdf_path: "robot/tx2_60_description/tx2_60.urdf"
+        asset_root_path: "robot/tx2_60_description"
+
+        base_link: "base_link"
+        ee_link: "ee_link"
+        link_names: null
+        lock_joints: null
+        extra_links: null
+
+
+        collision_link_names: ['base_link', 'tx2_60_link1', 'tx2_60_link2', 
+        'tx2_60_link3', 'tx2_60_link4', tx2_60_link6] # List[str]
+        collision_spheres:
+            base_link:
+              - "center": [-0.098, 0.0, 1.0]
+                "radius": 0.095
+              - "center": [-0.036, 0.064, 1.0]
+                "radius": 0.095
+              - "center": [-0.03, -0.071, 1.0]
+                "radius": 0.095
+              - "center": [0.077, 0.0, 1.0]
+                "radius": 0.095
+            tx2_60_link1:
+              - "center": [0.0, -0.0, 0.07]
+                "radius": 0.12
+              - "center": [0.0, 0.062, 0.185]
+                "radius": 0.12
+              - "center": [0.0, -0.004, 0.169]
+                "radius": 0.1
+            tx2_60_link2:
+              - "center": [0.042, 0.034, 0.032]
+                "radius": 0.06
+              - "center": [-0.044, 0.034, 0.031]
+                "radius": 0.06
+              - "center": [0.028, -0.315, 0.024]
+                "radius": 0.06
+              - "center": [-0.028, -0.315, 0.018]
+                "radius": 0.06
+              - "center": [0.039, -0.053, 0.019]
+                "radius": 0.07
+              - "center": [0.035, -0.14, 0.019]
+                "radius": 0.07
+              - "center": [0.032, -0.228, 0.018]
+                "radius": 0.07
+              - "center": [-0.04, -0.053, 0.018]
+                "radius": 0.07
+              - "center": [-0.036, -0.141, 0.018]
+                "radius": 0.07
+              - "center": [-0.032, -0.228, 0.018]
+                "radius": 0.07
+            tx2_60_link3:
+              - "center": [-0.005, -0.048, 0.12]
+                "radius": 0.11
+              - "center": [-0.018, 0.039, 0.12]
+                "radius": 0.11
+              - "center": [0.0, 0.0, 0.096]
+                "radius": 0.1
+            tx2_60_link4:
+              - "center": [0.0, 0.0, 0.156]
+                "radius": 0.09
+              - "center": [0.0, 0.0, 0.054]
+                "radius": 0.09
+            tx2_60_link6:
+              - "center": [0.0, 0.03, 0.05] #TODO
+                "radius": 0.06
+              - "center": [0.0, -0.03, 0.05] #TODO
+                "radius": 0.06 
+              - "center": [0.0, 0.06, 0.12] #TODO
+                "radius": 0.02
+              - "center": [0.0, -0.06, 0.12] #TODO
+                "radius": 0.02
+                   
+        collision_sphere_buffer: 0.005
+        extra_collision_spheres: {}
+        self_collision_ignore: {
+         "base_link": ["tx2_60_link1"],
+         "tx2_60_link1": ["tx2_60_link2"],
+         "tx2_60_link2": ["tx2_60_link3"],
+         "tx2_60_link3": ["tx2_60_link4"],
+         "tx2_60_link6": ["tx2_60_link4"],
+          }
+        self_collision_buffer: {
+         'base_link': 0,
+         'tx2_60_link1': 0,
+         'tx2_60_link2': 0,
+         'tx2_60_link3': 0,
+         'tx2_60_link4': 0,
+         'tx2_60_link6': 0,
+         } # Dict[str, float]
+
+        use_global_cumul: True
+        mesh_link_names: ['base_link', 'tx2_60_link1', 'tx2_60_link2', 'tx2_60_link3', 'tx2_60_link4', 'tx2_60_link5', 'tx2_60_link6'] 
+
+        cspace:
+          joint_names: ['tx2_60_joint1', 'tx2_60_joint2', 'tx2_60_joint3', 'tx2_60_joint4', 'tx2_60_joint5', 'tx2_60_joint6'] 
+          retract_config: [0.000, 0.873, 1.134, 0.000, 1.134, 0.000] # List[float] to check
+          null_space_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0] # List[str]
+          cspace_distance_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0] # List[str]
+          max_acceleration: 15.0
+          max_jerk: 500.0
+          
