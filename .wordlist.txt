@@ -33,6 +33,7 @@ Franka
 fx
 fy
 GeometricGraspServer
+github
 GPT
 grayscale
 http
@@ -50,6 +51,7 @@ LLMPlanner
 LLMs
 lsa
 lt
+magazino
 metaclass
 Mixin
 msg
