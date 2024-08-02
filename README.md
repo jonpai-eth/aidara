@@ -13,6 +13,10 @@ Watch Timm and Jonas present this project at ETH Zurich (in german)
 
 [![presentation](http://markdown-videos-api.jorgenkh.no/youtube/r_5VV-qFTWY)](https://youtu.be/r_5VV-qFTWY?t=444)
 
+## How it works
+
+Our setup includes a number of RGB cameras, a microphone, and a robot. Once the user gives an instruction, we send the instruction along with the current images to a LLM and instruct it to write a Python script fulfilling the request. To enable this, we created a small suite of APIs this script can make use of such as `move_gripper_to(pose: Pose)`. We then execute the script and profit.
+
 ## repository structure
 
 ```
