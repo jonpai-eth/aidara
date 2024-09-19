@@ -1,6 +1,9 @@
 matrix:
 - name: Python Source
   pipeline:
+    - pyspelling.filters.url: 
+        urls: true             
+        emails: false 
     - pyspelling.filters.python
   dictionary:
     wordlists:
@@ -10,6 +13,9 @@ matrix:
   - code/**/*.py
 - name: Markdown
   pipeline:
+    - pyspelling.filters.url: 
+        urls: true             
+        emails: false 
     - pyspelling.filters.markdown
   dictionary:
     wordlists:
@@ -19,6 +25,14 @@ matrix:
   - code/**/*.md
 - name: C++ Source
   pipeline:
+    - pyspelling.filters.url: 
+        urls: true             
+        emails: false 
+    - pyspelling.filters.context:
+        context_visible_first: true
+        delimiters:
+          - open: '\\param\[(?:in|out)\]\s+\w+'
+            close: '\s'
     - pyspelling.filters.cpp
   dictionary:
     wordlists:

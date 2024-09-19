@@ -1,0 +1,9 @@
+<library path="compliant_trajectory_controller">
+  <class name="compliant_trajectory_controller/CompliantTrajectoryController"
+         type="compliant_trajectory_controller::CompliantTrajectoryController"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Robot controller plugin for a 7 dof robot.
+    </description>
+  </class>
+</library>

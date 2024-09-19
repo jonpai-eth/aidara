@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/Tf2GetTransform.srv"
   "srv/Tf2TransformPoint.srv"
   "srv/Tf2TransformPose.srv"
+  "srv/UpdateParams.srv"
   DEPENDENCIES geometry_msgs std_msgs
 )
 

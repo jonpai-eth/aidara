@@ -1,3 +1,7 @@
 [submodule "dependencies/lang-segment-anything"]
 	path = dependencies/lang-segment-anything
 	url = https://github.com/luca-medeiros/lang-segment-anything.git
+
+[submodule "dependencies/libfranka"]
+	path = dependencies/libfranka
+	url = https://github.com/frankaemika/libfranka.git

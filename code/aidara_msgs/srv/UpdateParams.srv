@@ -1,0 +1,17 @@
+# Update the cartesian spring stiffness
+float64[7] stiffness [-1, -1, -1, -1, -1, -1, -1]
+
+# If set to True, critical damping will be applied and the damping factors dont need
+# to be set manually. If set to False damping factors need to be set manually.
+bool autodamping True
+
+# Update the cartesian damping factors
+float64[7] damping [-1, -1, -1, -1, -1, -1, -1]
+
+float64[5] filter [-1, -1, -1, -1, -1]
+
+# Update the allowed change of torque between a single time step
+float64 tau_delta -1.0
+
+---
+bool success
